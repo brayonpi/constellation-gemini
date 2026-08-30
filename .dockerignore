@@ -1,0 +1,14 @@
+.git
+.github
+.venv
+node_modules
+**/node_modules
+apps/web/dist
+**/dist
+.terraform
+**/.terraform
+*.sqlite3
+artifacts
+tests
+infra
+experiments

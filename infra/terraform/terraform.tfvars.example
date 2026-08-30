@@ -1,0 +1,5 @@
+project_id         = "your-google-cloud-project"
+region             = "us-central1"
+gemini_location    = "global"
+image              = "us-central1-docker.pkg.dev/your-google-cloud-project/constellation/app@sha256:replace-me"
+hexstellar_api_url = "https://api.hexstellar.com"

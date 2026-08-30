@@ -1,0 +1,121 @@
+version: constellation-mechanism-ledger-v1
+claim_boundary: >-
+  Mechanism experiments are simulation-only and separate from production evidence. A retained
+  mechanism establishes only the declared invariant on the committed fixtures and seeds.
+mechanisms:
+  - id: make-before-break-handoff
+    wall:
+      incumbent: direct recovery bundle replacement
+      target: fewer missed health obligations during transition
+      budget: 3 fixtures; seeds [4242, 4243, 4244]; no external paid calls
+      invariant: no hard mission violation
+    analogy:
+      domain: engineering
+      source: established telecom make-before-break control pattern
+      causal_mechanism: activate replacement coverage before retiring incumbent coverage
+    translation:
+      sensed_signal: health-contact coverage by time bucket
+      digital_state: incumbent and replacement activation intervals
+      operator: reject transitions with an uncovered intermediate bucket
+      derived_parameters: intervals come from committed contact windows
+    prediction:
+      expected_signal: fewer missed health buckets than direct replacement and random valid control
+      falsifier: no coverage improvement or higher disruption without coverage benefit
+    experiment:
+      control: direct replacement
+      contender: make-before-break bundle generator
+      random_control: seeded valid-bundle selection
+      bounded_oracle: null
+      instances: [demo-12]
+      seeds: [4242, 4243, 4244]
+      verifier: independent timeline coverage replay
+    tracers:
+      events: [replacement_activated, incumbent_retired, coverage_gap]
+      fields: [time_bucket, incumbent_bundle, replacement_bundle, covered_satellites]
+      perturbative: false
+      benchmark_separation: artifacts/mechanisms only
+    result:
+      real_objective_delta: null
+      surrogate_delta: null
+      timing_memory: null
+      anomalies: []
+    decision: mutate
+    next: add a fixture with a genuine incumbent-to-replacement health transition before promotion
+
+  - id: quarantine-boundary
+    wall:
+      incumbent: remove only the primary failed station
+      target: zero surviving bundles with direct or transitive failed-resource dependencies
+      budget: one deterministic fixture; no external calls
+      invariant: no valid unaffected bundle is removed
+    analogy:
+      domain: biology
+      source: hypothesis translated from containment boundaries; no biological performance claim
+      causal_mechanism: isolate a failed component and every executable dependency on it
+    translation:
+      sensed_signal: declared bundle resource dependencies
+      digital_state: failed-resource closure
+      operator: exclude candidate bundles intersecting the closure before solve
+      derived_parameters: exact resource identifiers from telemetry and bundle manifests
+    prediction:
+      expected_signal: no contaminated resource appears in generated or selected bundles
+      falsifier: any failed resource survives in a bundle or verified plan
+    experiment:
+      control: primary-station-only exclusion
+      contender: full declared failure-resource exclusion
+      random_control: seeded exclusion of equal cardinality
+      bounded_oracle: exact intersection check
+      instances: [demo-12]
+      seeds: [4242]
+      verifier: tests/test_bundles.py and independent mission verifier
+    tracers:
+      events: [failure_received, resource_quarantined, bundle_rejected]
+      fields: [event_id, resource_id, bundle_id]
+      perturbative: false
+      benchmark_separation: tests and artifacts/mechanisms only
+    result:
+      real_objective_delta: zero contaminated bundles on the committed demo fixture
+      surrogate_delta: null
+      timing_memory: not measured
+      anomalies: []
+    decision: keep
+    next: test a declared multi-hop link dependency closure
+
+  - id: orbital-islanding
+    wall:
+      incumbent: full recovery replan
+      target: fewer changed actions with identical hard-constraint coverage
+      budget: 3 fixtures; seeds [4242, 4243, 4244]; no external paid calls
+      invariant: zero hard violations
+    analogy:
+      domain: engineering
+      source: power-grid islanding as an engineered containment mechanism
+      causal_mechanism: freeze stable components and reconfigure only the affected island
+    translation:
+      sensed_signal: bundle dependency graph intersection with failed resources
+      digital_state: stable-component set
+      operator: force unaffected incumbent bundles and replan the affected component
+      derived_parameters: graph components and incumbent schedule
+    prediction:
+      expected_signal: fewer changed actions than full replan and equal-cardinality random freeze
+      falsifier: no change reduction, infeasibility, or worse declared mission objective
+    experiment:
+      control: full replan
+      contender: dependency-derived force set
+      random_control: seeded equal-cardinality force set
+      bounded_oracle: null
+      instances: [demo-12]
+      seeds: [4242, 4243, 4244]
+      verifier: independent schedule replay and exact action-diff count
+    tracers:
+      events: [component_identified, bundle_forced, action_changed]
+      fields: [component_id, bundle_id, action_id, disruption_delta]
+      perturbative: false
+      benchmark_separation: artifacts/mechanisms only
+    result:
+      real_objective_delta: null
+      surrogate_delta: null
+      timing_memory: null
+      anomalies: []
+    decision: mutate
+    next: encode incumbent bundles as force-compatible candidate bundles before promotion

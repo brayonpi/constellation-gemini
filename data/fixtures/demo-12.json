@@ -1,0 +1,903 @@
+{
+  "id": "demo-12",
+  "horizon_minutes": 180,
+  "satellites": [
+    {
+      "id": "SAT-01",
+      "orbit_phase_deg": 0,
+      "compute_class": "C1",
+      "compute_slots": 1,
+      "energy_capacity": 100,
+      "energy_floor": 30,
+      "storage_capacity": 240,
+      "isolated": false
+    },
+    {
+      "id": "SAT-02",
+      "orbit_phase_deg": 30,
+      "compute_class": "C1",
+      "compute_slots": 1,
+      "energy_capacity": 100,
+      "energy_floor": 30,
+      "storage_capacity": 240,
+      "isolated": false
+    },
+    {
+      "id": "SAT-03",
+      "orbit_phase_deg": 60,
+      "compute_class": "C2",
+      "compute_slots": 2,
+      "energy_capacity": 100,
+      "energy_floor": 30,
+      "storage_capacity": 240,
+      "isolated": false
+    },
+    {
+      "id": "SAT-04",
+      "orbit_phase_deg": 90,
+      "compute_class": "C1",
+      "compute_slots": 1,
+      "energy_capacity": 100,
+      "energy_floor": 30,
+      "storage_capacity": 240,
+      "isolated": false
+    },
+    {
+      "id": "SAT-05",
+      "orbit_phase_deg": 120,
+      "compute_class": "C2",
+      "compute_slots": 2,
+      "energy_capacity": 100,
+      "energy_floor": 30,
+      "storage_capacity": 240,
+      "isolated": false
+    },
+    {
+      "id": "SAT-06",
+      "orbit_phase_deg": 150,
+      "compute_class": "C1",
+      "compute_slots": 1,
+      "energy_capacity": 100,
+      "energy_floor": 30,
+      "storage_capacity": 240,
+      "isolated": false
+    },
+    {
+      "id": "SAT-07",
+      "orbit_phase_deg": 180,
+      "compute_class": "C1",
+      "compute_slots": 1,
+      "energy_capacity": 100,
+      "energy_floor": 30,
+      "storage_capacity": 240,
+      "isolated": false
+    },
+    {
+      "id": "SAT-08",
+      "orbit_phase_deg": 210,
+      "compute_class": "C1",
+      "compute_slots": 1,
+      "energy_capacity": 100,
+      "energy_floor": 30,
+      "storage_capacity": 240,
+      "isolated": false
+    },
+    {
+      "id": "SAT-09",
+      "orbit_phase_deg": 240,
+      "compute_class": "C2",
+      "compute_slots": 2,
+      "energy_capacity": 100,
+      "energy_floor": 30,
+      "storage_capacity": 240,
+      "isolated": false
+    },
+    {
+      "id": "SAT-10",
+      "orbit_phase_deg": 270,
+      "compute_class": "C2",
+      "compute_slots": 2,
+      "energy_capacity": 100,
+      "energy_floor": 30,
+      "storage_capacity": 240,
+      "isolated": false
+    },
+    {
+      "id": "SAT-11",
+      "orbit_phase_deg": 300,
+      "compute_class": "C1",
+      "compute_slots": 1,
+      "energy_capacity": 100,
+      "energy_floor": 30,
+      "storage_capacity": 240,
+      "isolated": false
+    },
+    {
+      "id": "SAT-12",
+      "orbit_phase_deg": 330,
+      "compute_class": "C1",
+      "compute_slots": 1,
+      "energy_capacity": 100,
+      "energy_floor": 30,
+      "storage_capacity": 240,
+      "isolated": false
+    }
+  ],
+  "ground_stations": [
+    {
+      "id": "GS-ALASKA-01",
+      "latitude": 64.2,
+      "longitude": -149.5,
+      "offline_intervals": []
+    },
+    {
+      "id": "GS-PACIFIC-02",
+      "latitude": 19.7,
+      "longitude": -155.1,
+      "offline_intervals": []
+    },
+    {
+      "id": "GS-ATACAMA-03",
+      "latitude": -23.0,
+      "longitude": -67.7,
+      "offline_intervals": []
+    },
+    {
+      "id": "GS-NORDIC-04",
+      "latitude": 67.9,
+      "longitude": 21.1,
+      "offline_intervals": []
+    }
+  ],
+  "links": [
+    {
+      "source": "SAT-01",
+      "target": "SAT-03",
+      "cost": 2,
+      "unavailable_intervals": []
+    },
+    {
+      "source": "SAT-03",
+      "target": "SAT-05",
+      "cost": 1,
+      "unavailable_intervals": []
+    },
+    {
+      "source": "SAT-05",
+      "target": "SAT-07",
+      "cost": 2,
+      "unavailable_intervals": []
+    },
+    {
+      "source": "SAT-07",
+      "target": "SAT-09",
+      "cost": 1,
+      "unavailable_intervals": []
+    },
+    {
+      "source": "SAT-09",
+      "target": "SAT-11",
+      "cost": 2,
+      "unavailable_intervals": []
+    },
+    {
+      "source": "SAT-11",
+      "target": "SAT-01",
+      "cost": 1,
+      "unavailable_intervals": []
+    }
+  ],
+  "contact_windows": [
+    {
+      "id": "CW-01-1",
+      "satellite_id": "SAT-01",
+      "station_id": "GS-PACIFIC-02",
+      "interval": {
+        "start": 21,
+        "end": 31
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-01-2",
+      "satellite_id": "SAT-01",
+      "station_id": "GS-ATACAMA-03",
+      "interval": {
+        "start": 63,
+        "end": 73
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-01-3",
+      "satellite_id": "SAT-01",
+      "station_id": "GS-NORDIC-04",
+      "interval": {
+        "start": 109,
+        "end": 119
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-02-1",
+      "satellite_id": "SAT-02",
+      "station_id": "GS-ATACAMA-03",
+      "interval": {
+        "start": 22,
+        "end": 32
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-02-2",
+      "satellite_id": "SAT-02",
+      "station_id": "GS-NORDIC-04",
+      "interval": {
+        "start": 64,
+        "end": 74
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-02-3",
+      "satellite_id": "SAT-02",
+      "station_id": "GS-ALASKA-01",
+      "interval": {
+        "start": 110,
+        "end": 120
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-03-1",
+      "satellite_id": "SAT-03",
+      "station_id": "GS-NORDIC-04",
+      "interval": {
+        "start": 23,
+        "end": 33
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-03-2",
+      "satellite_id": "SAT-03",
+      "station_id": "GS-ALASKA-01",
+      "interval": {
+        "start": 65,
+        "end": 75
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-03-3",
+      "satellite_id": "SAT-03",
+      "station_id": "GS-PACIFIC-02",
+      "interval": {
+        "start": 111,
+        "end": 121
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-04-1",
+      "satellite_id": "SAT-04",
+      "station_id": "GS-ALASKA-01",
+      "interval": {
+        "start": 24,
+        "end": 34
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-04-2",
+      "satellite_id": "SAT-04",
+      "station_id": "GS-PACIFIC-02",
+      "interval": {
+        "start": 66,
+        "end": 76
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-04-3",
+      "satellite_id": "SAT-04",
+      "station_id": "GS-ATACAMA-03",
+      "interval": {
+        "start": 112,
+        "end": 122
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-05-1",
+      "satellite_id": "SAT-05",
+      "station_id": "GS-PACIFIC-02",
+      "interval": {
+        "start": 25,
+        "end": 35
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-05-2",
+      "satellite_id": "SAT-05",
+      "station_id": "GS-ATACAMA-03",
+      "interval": {
+        "start": 67,
+        "end": 77
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-05-3",
+      "satellite_id": "SAT-05",
+      "station_id": "GS-NORDIC-04",
+      "interval": {
+        "start": 113,
+        "end": 123
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-06-1",
+      "satellite_id": "SAT-06",
+      "station_id": "GS-ATACAMA-03",
+      "interval": {
+        "start": 26,
+        "end": 36
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-06-2",
+      "satellite_id": "SAT-06",
+      "station_id": "GS-NORDIC-04",
+      "interval": {
+        "start": 68,
+        "end": 78
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-06-3",
+      "satellite_id": "SAT-06",
+      "station_id": "GS-ALASKA-01",
+      "interval": {
+        "start": 114,
+        "end": 124
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-07-1",
+      "satellite_id": "SAT-07",
+      "station_id": "GS-NORDIC-04",
+      "interval": {
+        "start": 27,
+        "end": 37
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-07-2",
+      "satellite_id": "SAT-07",
+      "station_id": "GS-ALASKA-01",
+      "interval": {
+        "start": 69,
+        "end": 79
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-07-3",
+      "satellite_id": "SAT-07",
+      "station_id": "GS-PACIFIC-02",
+      "interval": {
+        "start": 115,
+        "end": 125
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-08-1",
+      "satellite_id": "SAT-08",
+      "station_id": "GS-ALASKA-01",
+      "interval": {
+        "start": 28,
+        "end": 38
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-08-2",
+      "satellite_id": "SAT-08",
+      "station_id": "GS-PACIFIC-02",
+      "interval": {
+        "start": 70,
+        "end": 80
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-08-3",
+      "satellite_id": "SAT-08",
+      "station_id": "GS-ATACAMA-03",
+      "interval": {
+        "start": 116,
+        "end": 126
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-09-1",
+      "satellite_id": "SAT-09",
+      "station_id": "GS-PACIFIC-02",
+      "interval": {
+        "start": 29,
+        "end": 39
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-09-2",
+      "satellite_id": "SAT-09",
+      "station_id": "GS-ATACAMA-03",
+      "interval": {
+        "start": 71,
+        "end": 81
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-09-3",
+      "satellite_id": "SAT-09",
+      "station_id": "GS-NORDIC-04",
+      "interval": {
+        "start": 117,
+        "end": 127
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-10-1",
+      "satellite_id": "SAT-10",
+      "station_id": "GS-ATACAMA-03",
+      "interval": {
+        "start": 30,
+        "end": 40
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-10-2",
+      "satellite_id": "SAT-10",
+      "station_id": "GS-NORDIC-04",
+      "interval": {
+        "start": 72,
+        "end": 82
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-10-3",
+      "satellite_id": "SAT-10",
+      "station_id": "GS-ALASKA-01",
+      "interval": {
+        "start": 118,
+        "end": 128
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-11-1",
+      "satellite_id": "SAT-11",
+      "station_id": "GS-NORDIC-04",
+      "interval": {
+        "start": 31,
+        "end": 41
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-11-2",
+      "satellite_id": "SAT-11",
+      "station_id": "GS-ALASKA-01",
+      "interval": {
+        "start": 73,
+        "end": 83
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-11-3",
+      "satellite_id": "SAT-11",
+      "station_id": "GS-PACIFIC-02",
+      "interval": {
+        "start": 119,
+        "end": 129
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-12-1",
+      "satellite_id": "SAT-12",
+      "station_id": "GS-ALASKA-01",
+      "interval": {
+        "start": 32,
+        "end": 42
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-12-2",
+      "satellite_id": "SAT-12",
+      "station_id": "GS-PACIFIC-02",
+      "interval": {
+        "start": 74,
+        "end": 84
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    },
+    {
+      "id": "CW-12-3",
+      "satellite_id": "SAT-12",
+      "station_id": "GS-ATACAMA-03",
+      "interval": {
+        "start": 120,
+        "end": 130
+      },
+      "capacity_mb": 180,
+      "kind": "both"
+    }
+  ],
+  "jobs": [
+    {
+      "id": "JOB-URGENT",
+      "source_trace_id": "borg-anon-0001",
+      "resource_class": "C2",
+      "duration": 12,
+      "priority": 10,
+      "output_size_mb": 120,
+      "deadline": 92,
+      "dependency_group": "eval",
+      "criticality": "critical"
+    },
+    {
+      "id": "JOB-CRITICAL-01",
+      "source_trace_id": "borg-anon-0002",
+      "resource_class": "C2",
+      "duration": 10,
+      "priority": 9,
+      "output_size_mb": 90,
+      "deadline": 121,
+      "dependency_group": "safety",
+      "criticality": "critical"
+    },
+    {
+      "id": "JOB-03",
+      "source_trace_id": "borg-anon-0003",
+      "resource_class": "C2",
+      "duration": 7,
+      "priority": 4,
+      "output_size_mb": 50,
+      "deadline": 123,
+      "dependency_group": "batch-3",
+      "criticality": "deferable"
+    },
+    {
+      "id": "JOB-04",
+      "source_trace_id": "borg-anon-0004",
+      "resource_class": "C1",
+      "duration": 8,
+      "priority": 5,
+      "output_size_mb": 60,
+      "deadline": 124,
+      "dependency_group": "batch-0",
+      "criticality": "normal"
+    },
+    {
+      "id": "JOB-05",
+      "source_trace_id": "borg-anon-0005",
+      "resource_class": "C1",
+      "duration": 9,
+      "priority": 6,
+      "output_size_mb": 20,
+      "deadline": 125,
+      "dependency_group": "batch-1",
+      "criticality": "deferable"
+    },
+    {
+      "id": "JOB-06",
+      "source_trace_id": "borg-anon-0006",
+      "resource_class": "C2",
+      "duration": 10,
+      "priority": 1,
+      "output_size_mb": 30,
+      "deadline": 126,
+      "dependency_group": "batch-2",
+      "criticality": "normal"
+    },
+    {
+      "id": "JOB-07",
+      "source_trace_id": "borg-anon-0007",
+      "resource_class": "C1",
+      "duration": 4,
+      "priority": 2,
+      "output_size_mb": 40,
+      "deadline": 127,
+      "dependency_group": "batch-3",
+      "criticality": "deferable"
+    },
+    {
+      "id": "JOB-08",
+      "source_trace_id": "borg-anon-0008",
+      "resource_class": "C1",
+      "duration": 5,
+      "priority": 3,
+      "output_size_mb": 50,
+      "deadline": 128,
+      "dependency_group": "batch-0",
+      "criticality": "normal"
+    },
+    {
+      "id": "JOB-09",
+      "source_trace_id": "borg-anon-0009",
+      "resource_class": "C2",
+      "duration": 6,
+      "priority": 4,
+      "output_size_mb": 60,
+      "deadline": 129,
+      "dependency_group": "batch-1",
+      "criticality": "deferable"
+    },
+    {
+      "id": "JOB-10",
+      "source_trace_id": "borg-anon-0010",
+      "resource_class": "C1",
+      "duration": 7,
+      "priority": 5,
+      "output_size_mb": 20,
+      "deadline": 130,
+      "dependency_group": "batch-2",
+      "criticality": "normal"
+    },
+    {
+      "id": "JOB-11",
+      "source_trace_id": "borg-anon-0011",
+      "resource_class": "C1",
+      "duration": 8,
+      "priority": 6,
+      "output_size_mb": 30,
+      "deadline": 131,
+      "dependency_group": "batch-3",
+      "criticality": "deferable"
+    },
+    {
+      "id": "JOB-12",
+      "source_trace_id": "borg-anon-0012",
+      "resource_class": "C2",
+      "duration": 9,
+      "priority": 1,
+      "output_size_mb": 40,
+      "deadline": 132,
+      "dependency_group": "batch-0",
+      "criticality": "normal"
+    },
+    {
+      "id": "JOB-13",
+      "source_trace_id": "borg-anon-0013",
+      "resource_class": "C1",
+      "duration": 10,
+      "priority": 2,
+      "output_size_mb": 50,
+      "deadline": 133,
+      "dependency_group": "batch-1",
+      "criticality": "deferable"
+    },
+    {
+      "id": "JOB-14",
+      "source_trace_id": "borg-anon-0014",
+      "resource_class": "C1",
+      "duration": 4,
+      "priority": 3,
+      "output_size_mb": 60,
+      "deadline": 134,
+      "dependency_group": "batch-2",
+      "criticality": "normal"
+    },
+    {
+      "id": "JOB-15",
+      "source_trace_id": "borg-anon-0015",
+      "resource_class": "C2",
+      "duration": 5,
+      "priority": 4,
+      "output_size_mb": 20,
+      "deadline": 135,
+      "dependency_group": "batch-3",
+      "criticality": "deferable"
+    },
+    {
+      "id": "JOB-16",
+      "source_trace_id": "borg-anon-0016",
+      "resource_class": "C1",
+      "duration": 6,
+      "priority": 5,
+      "output_size_mb": 30,
+      "deadline": 136,
+      "dependency_group": "batch-0",
+      "criticality": "normal"
+    },
+    {
+      "id": "JOB-17",
+      "source_trace_id": "borg-anon-0017",
+      "resource_class": "C1",
+      "duration": 7,
+      "priority": 6,
+      "output_size_mb": 40,
+      "deadline": 137,
+      "dependency_group": "batch-1",
+      "criticality": "deferable"
+    },
+    {
+      "id": "JOB-18",
+      "source_trace_id": "borg-anon-0018",
+      "resource_class": "C2",
+      "duration": 8,
+      "priority": 1,
+      "output_size_mb": 50,
+      "deadline": 138,
+      "dependency_group": "batch-2",
+      "criticality": "normal"
+    },
+    {
+      "id": "JOB-19",
+      "source_trace_id": "borg-anon-0019",
+      "resource_class": "C1",
+      "duration": 9,
+      "priority": 2,
+      "output_size_mb": 60,
+      "deadline": 139,
+      "dependency_group": "batch-3",
+      "criticality": "deferable"
+    },
+    {
+      "id": "JOB-20",
+      "source_trace_id": "borg-anon-0020",
+      "resource_class": "C1",
+      "duration": 10,
+      "priority": 3,
+      "output_size_mb": 20,
+      "deadline": 140,
+      "dependency_group": "batch-0",
+      "criticality": "normal"
+    },
+    {
+      "id": "JOB-21",
+      "source_trace_id": "borg-anon-0021",
+      "resource_class": "C2",
+      "duration": 4,
+      "priority": 4,
+      "output_size_mb": 30,
+      "deadline": 141,
+      "dependency_group": "batch-1",
+      "criticality": "deferable"
+    },
+    {
+      "id": "JOB-22",
+      "source_trace_id": "borg-anon-0022",
+      "resource_class": "C1",
+      "duration": 5,
+      "priority": 5,
+      "output_size_mb": 40,
+      "deadline": 142,
+      "dependency_group": "batch-2",
+      "criticality": "normal"
+    },
+    {
+      "id": "JOB-23",
+      "source_trace_id": "borg-anon-0023",
+      "resource_class": "C1",
+      "duration": 6,
+      "priority": 6,
+      "output_size_mb": 50,
+      "deadline": 143,
+      "dependency_group": "batch-3",
+      "criticality": "deferable"
+    },
+    {
+      "id": "JOB-24",
+      "source_trace_id": "borg-anon-0024",
+      "resource_class": "C2",
+      "duration": 7,
+      "priority": 1,
+      "output_size_mb": 60,
+      "deadline": 144,
+      "dependency_group": "batch-0",
+      "criticality": "normal"
+    }
+  ],
+  "existing_schedule": [
+    {
+      "id": "NOM-H-SAT-01",
+      "kind": "health",
+      "satellite_id": "SAT-01",
+      "interval": {
+        "start": 21,
+        "end": 24
+      },
+      "station_id": "GS-PACIFIC-02",
+      "energy_delta": -1,
+      "storage_delta": 0
+    },
+    {
+      "id": "NOM-C-URGENT",
+      "kind": "compute",
+      "satellite_id": "SAT-07",
+      "interval": {
+        "start": 38,
+        "end": 50
+      },
+      "job_id": "JOB-URGENT",
+      "energy_delta": -12,
+      "storage_delta": 120
+    },
+    {
+      "id": "NOM-D-URGENT",
+      "kind": "downlink",
+      "satellite_id": "SAT-07",
+      "interval": {
+        "start": 69,
+        "end": 73
+      },
+      "job_id": "JOB-URGENT",
+      "station_id": "GS-PACIFIC-02",
+      "energy_delta": -2,
+      "storage_delta": -120
+    }
+  ],
+  "dataset_provenance": {
+    "name": "Google Borg ClusterData 2019 \u2014 committed demonstration slice",
+    "source_url": "https://github.com/google/cluster-data",
+    "license": "CC BY 4.0",
+    "version": "clusterdata-2019; synthetic committed fixture pending BigQuery extraction",
+    "derived_sha256": "fixture-only-no-production-trace",
+    "transformation_manifest": "data/borg/PROVENANCE.json"
+  },
+  "generator_version": "constellation-fixture-v1",
+  "sha256": "027967d3c725f478556071ad97a1963680ee1dce34b28a20bca7aefc8343495f"
+}

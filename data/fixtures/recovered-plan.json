@@ -1,0 +1,2212 @@
+{
+  "format": "constellation-replay-v1",
+  "offline_precomputed": true,
+  "mission": {
+    "id": "692996dc-0a30-4503-a000-f054d0da87ba",
+    "name": "Suncatcher-inspired resilience scenario",
+    "status": "verified",
+    "snapshot": {
+      "id": "demo-12",
+      "horizon_minutes": 180,
+      "satellites": [
+        {
+          "id": "SAT-01",
+          "orbit_phase_deg": 0.0,
+          "compute_class": "C1",
+          "compute_slots": 1,
+          "energy_capacity": 100.0,
+          "energy_floor": 30.0,
+          "storage_capacity": 240.0,
+          "isolated": false
+        },
+        {
+          "id": "SAT-02",
+          "orbit_phase_deg": 30.0,
+          "compute_class": "C1",
+          "compute_slots": 1,
+          "energy_capacity": 100.0,
+          "energy_floor": 30.0,
+          "storage_capacity": 240.0,
+          "isolated": false
+        },
+        {
+          "id": "SAT-03",
+          "orbit_phase_deg": 60.0,
+          "compute_class": "C2",
+          "compute_slots": 2,
+          "energy_capacity": 100.0,
+          "energy_floor": 30.0,
+          "storage_capacity": 240.0,
+          "isolated": false
+        },
+        {
+          "id": "SAT-04",
+          "orbit_phase_deg": 90.0,
+          "compute_class": "C1",
+          "compute_slots": 1,
+          "energy_capacity": 100.0,
+          "energy_floor": 30.0,
+          "storage_capacity": 240.0,
+          "isolated": false
+        },
+        {
+          "id": "SAT-05",
+          "orbit_phase_deg": 120.0,
+          "compute_class": "C2",
+          "compute_slots": 2,
+          "energy_capacity": 100.0,
+          "energy_floor": 30.0,
+          "storage_capacity": 240.0,
+          "isolated": false
+        },
+        {
+          "id": "SAT-06",
+          "orbit_phase_deg": 150.0,
+          "compute_class": "C1",
+          "compute_slots": 1,
+          "energy_capacity": 100.0,
+          "energy_floor": 30.0,
+          "storage_capacity": 240.0,
+          "isolated": false
+        },
+        {
+          "id": "SAT-07",
+          "orbit_phase_deg": 180.0,
+          "compute_class": "C1",
+          "compute_slots": 1,
+          "energy_capacity": 100.0,
+          "energy_floor": 30.0,
+          "storage_capacity": 240.0,
+          "isolated": false
+        },
+        {
+          "id": "SAT-08",
+          "orbit_phase_deg": 210.0,
+          "compute_class": "C1",
+          "compute_slots": 1,
+          "energy_capacity": 100.0,
+          "energy_floor": 30.0,
+          "storage_capacity": 240.0,
+          "isolated": false
+        },
+        {
+          "id": "SAT-09",
+          "orbit_phase_deg": 240.0,
+          "compute_class": "C2",
+          "compute_slots": 2,
+          "energy_capacity": 100.0,
+          "energy_floor": 30.0,
+          "storage_capacity": 240.0,
+          "isolated": false
+        },
+        {
+          "id": "SAT-10",
+          "orbit_phase_deg": 270.0,
+          "compute_class": "C2",
+          "compute_slots": 2,
+          "energy_capacity": 100.0,
+          "energy_floor": 30.0,
+          "storage_capacity": 240.0,
+          "isolated": false
+        },
+        {
+          "id": "SAT-11",
+          "orbit_phase_deg": 300.0,
+          "compute_class": "C1",
+          "compute_slots": 1,
+          "energy_capacity": 100.0,
+          "energy_floor": 30.0,
+          "storage_capacity": 240.0,
+          "isolated": false
+        },
+        {
+          "id": "SAT-12",
+          "orbit_phase_deg": 330.0,
+          "compute_class": "C1",
+          "compute_slots": 1,
+          "energy_capacity": 100.0,
+          "energy_floor": 30.0,
+          "storage_capacity": 240.0,
+          "isolated": false
+        }
+      ],
+      "ground_stations": [
+        {
+          "id": "GS-ALASKA-01",
+          "latitude": 64.2,
+          "longitude": -149.5,
+          "offline_intervals": []
+        },
+        {
+          "id": "GS-PACIFIC-02",
+          "latitude": 19.7,
+          "longitude": -155.1,
+          "offline_intervals": []
+        },
+        {
+          "id": "GS-ATACAMA-03",
+          "latitude": -23.0,
+          "longitude": -67.7,
+          "offline_intervals": []
+        },
+        {
+          "id": "GS-NORDIC-04",
+          "latitude": 67.9,
+          "longitude": 21.1,
+          "offline_intervals": []
+        }
+      ],
+      "links": [
+        {
+          "source": "SAT-01",
+          "target": "SAT-03",
+          "cost": 2,
+          "unavailable_intervals": []
+        },
+        {
+          "source": "SAT-03",
+          "target": "SAT-05",
+          "cost": 1,
+          "unavailable_intervals": []
+        },
+        {
+          "source": "SAT-05",
+          "target": "SAT-07",
+          "cost": 2,
+          "unavailable_intervals": []
+        },
+        {
+          "source": "SAT-07",
+          "target": "SAT-09",
+          "cost": 1,
+          "unavailable_intervals": []
+        },
+        {
+          "source": "SAT-09",
+          "target": "SAT-11",
+          "cost": 2,
+          "unavailable_intervals": []
+        },
+        {
+          "source": "SAT-11",
+          "target": "SAT-01",
+          "cost": 1,
+          "unavailable_intervals": []
+        }
+      ],
+      "contact_windows": [
+        {
+          "id": "CW-01-1",
+          "satellite_id": "SAT-01",
+          "station_id": "GS-PACIFIC-02",
+          "interval": {
+            "start": 21,
+            "end": 31
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-01-2",
+          "satellite_id": "SAT-01",
+          "station_id": "GS-ATACAMA-03",
+          "interval": {
+            "start": 63,
+            "end": 73
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-01-3",
+          "satellite_id": "SAT-01",
+          "station_id": "GS-NORDIC-04",
+          "interval": {
+            "start": 109,
+            "end": 119
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-02-1",
+          "satellite_id": "SAT-02",
+          "station_id": "GS-ATACAMA-03",
+          "interval": {
+            "start": 22,
+            "end": 32
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-02-2",
+          "satellite_id": "SAT-02",
+          "station_id": "GS-NORDIC-04",
+          "interval": {
+            "start": 64,
+            "end": 74
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-02-3",
+          "satellite_id": "SAT-02",
+          "station_id": "GS-ALASKA-01",
+          "interval": {
+            "start": 110,
+            "end": 120
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-03-1",
+          "satellite_id": "SAT-03",
+          "station_id": "GS-NORDIC-04",
+          "interval": {
+            "start": 23,
+            "end": 33
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-03-2",
+          "satellite_id": "SAT-03",
+          "station_id": "GS-ALASKA-01",
+          "interval": {
+            "start": 65,
+            "end": 75
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-03-3",
+          "satellite_id": "SAT-03",
+          "station_id": "GS-PACIFIC-02",
+          "interval": {
+            "start": 111,
+            "end": 121
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-04-1",
+          "satellite_id": "SAT-04",
+          "station_id": "GS-ALASKA-01",
+          "interval": {
+            "start": 24,
+            "end": 34
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-04-2",
+          "satellite_id": "SAT-04",
+          "station_id": "GS-PACIFIC-02",
+          "interval": {
+            "start": 66,
+            "end": 76
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-04-3",
+          "satellite_id": "SAT-04",
+          "station_id": "GS-ATACAMA-03",
+          "interval": {
+            "start": 112,
+            "end": 122
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-05-1",
+          "satellite_id": "SAT-05",
+          "station_id": "GS-PACIFIC-02",
+          "interval": {
+            "start": 25,
+            "end": 35
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-05-2",
+          "satellite_id": "SAT-05",
+          "station_id": "GS-ATACAMA-03",
+          "interval": {
+            "start": 67,
+            "end": 77
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-05-3",
+          "satellite_id": "SAT-05",
+          "station_id": "GS-NORDIC-04",
+          "interval": {
+            "start": 113,
+            "end": 123
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-06-1",
+          "satellite_id": "SAT-06",
+          "station_id": "GS-ATACAMA-03",
+          "interval": {
+            "start": 26,
+            "end": 36
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-06-2",
+          "satellite_id": "SAT-06",
+          "station_id": "GS-NORDIC-04",
+          "interval": {
+            "start": 68,
+            "end": 78
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-06-3",
+          "satellite_id": "SAT-06",
+          "station_id": "GS-ALASKA-01",
+          "interval": {
+            "start": 114,
+            "end": 124
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-07-1",
+          "satellite_id": "SAT-07",
+          "station_id": "GS-NORDIC-04",
+          "interval": {
+            "start": 27,
+            "end": 37
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-07-2",
+          "satellite_id": "SAT-07",
+          "station_id": "GS-ALASKA-01",
+          "interval": {
+            "start": 69,
+            "end": 79
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-07-3",
+          "satellite_id": "SAT-07",
+          "station_id": "GS-PACIFIC-02",
+          "interval": {
+            "start": 115,
+            "end": 125
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-08-1",
+          "satellite_id": "SAT-08",
+          "station_id": "GS-ALASKA-01",
+          "interval": {
+            "start": 28,
+            "end": 38
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-08-2",
+          "satellite_id": "SAT-08",
+          "station_id": "GS-PACIFIC-02",
+          "interval": {
+            "start": 70,
+            "end": 80
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-08-3",
+          "satellite_id": "SAT-08",
+          "station_id": "GS-ATACAMA-03",
+          "interval": {
+            "start": 116,
+            "end": 126
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-09-1",
+          "satellite_id": "SAT-09",
+          "station_id": "GS-PACIFIC-02",
+          "interval": {
+            "start": 29,
+            "end": 39
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-09-2",
+          "satellite_id": "SAT-09",
+          "station_id": "GS-ATACAMA-03",
+          "interval": {
+            "start": 71,
+            "end": 81
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-09-3",
+          "satellite_id": "SAT-09",
+          "station_id": "GS-NORDIC-04",
+          "interval": {
+            "start": 117,
+            "end": 127
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-10-1",
+          "satellite_id": "SAT-10",
+          "station_id": "GS-ATACAMA-03",
+          "interval": {
+            "start": 30,
+            "end": 40
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-10-2",
+          "satellite_id": "SAT-10",
+          "station_id": "GS-NORDIC-04",
+          "interval": {
+            "start": 72,
+            "end": 82
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-10-3",
+          "satellite_id": "SAT-10",
+          "station_id": "GS-ALASKA-01",
+          "interval": {
+            "start": 118,
+            "end": 128
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-11-1",
+          "satellite_id": "SAT-11",
+          "station_id": "GS-NORDIC-04",
+          "interval": {
+            "start": 31,
+            "end": 41
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-11-2",
+          "satellite_id": "SAT-11",
+          "station_id": "GS-ALASKA-01",
+          "interval": {
+            "start": 73,
+            "end": 83
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-11-3",
+          "satellite_id": "SAT-11",
+          "station_id": "GS-PACIFIC-02",
+          "interval": {
+            "start": 119,
+            "end": 129
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-12-1",
+          "satellite_id": "SAT-12",
+          "station_id": "GS-ALASKA-01",
+          "interval": {
+            "start": 32,
+            "end": 42
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-12-2",
+          "satellite_id": "SAT-12",
+          "station_id": "GS-PACIFIC-02",
+          "interval": {
+            "start": 74,
+            "end": 84
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        },
+        {
+          "id": "CW-12-3",
+          "satellite_id": "SAT-12",
+          "station_id": "GS-ATACAMA-03",
+          "interval": {
+            "start": 120,
+            "end": 130
+          },
+          "capacity_mb": 180,
+          "kind": "both"
+        }
+      ],
+      "jobs": [
+        {
+          "id": "JOB-URGENT",
+          "source_trace_id": "borg-anon-0001",
+          "resource_class": "C2",
+          "duration": 12,
+          "priority": 10,
+          "output_size_mb": 120,
+          "deadline": 92,
+          "dependency_group": "eval",
+          "criticality": "critical"
+        },
+        {
+          "id": "JOB-CRITICAL-01",
+          "source_trace_id": "borg-anon-0002",
+          "resource_class": "C2",
+          "duration": 10,
+          "priority": 9,
+          "output_size_mb": 90,
+          "deadline": 121,
+          "dependency_group": "safety",
+          "criticality": "critical"
+        },
+        {
+          "id": "JOB-03",
+          "source_trace_id": "borg-anon-0003",
+          "resource_class": "C2",
+          "duration": 7,
+          "priority": 4,
+          "output_size_mb": 50,
+          "deadline": 123,
+          "dependency_group": "batch-3",
+          "criticality": "deferable"
+        },
+        {
+          "id": "JOB-04",
+          "source_trace_id": "borg-anon-0004",
+          "resource_class": "C1",
+          "duration": 8,
+          "priority": 5,
+          "output_size_mb": 60,
+          "deadline": 124,
+          "dependency_group": "batch-0",
+          "criticality": "normal"
+        },
+        {
+          "id": "JOB-05",
+          "source_trace_id": "borg-anon-0005",
+          "resource_class": "C1",
+          "duration": 9,
+          "priority": 6,
+          "output_size_mb": 20,
+          "deadline": 125,
+          "dependency_group": "batch-1",
+          "criticality": "deferable"
+        },
+        {
+          "id": "JOB-06",
+          "source_trace_id": "borg-anon-0006",
+          "resource_class": "C2",
+          "duration": 10,
+          "priority": 1,
+          "output_size_mb": 30,
+          "deadline": 126,
+          "dependency_group": "batch-2",
+          "criticality": "normal"
+        },
+        {
+          "id": "JOB-07",
+          "source_trace_id": "borg-anon-0007",
+          "resource_class": "C1",
+          "duration": 4,
+          "priority": 2,
+          "output_size_mb": 40,
+          "deadline": 127,
+          "dependency_group": "batch-3",
+          "criticality": "deferable"
+        },
+        {
+          "id": "JOB-08",
+          "source_trace_id": "borg-anon-0008",
+          "resource_class": "C1",
+          "duration": 5,
+          "priority": 3,
+          "output_size_mb": 50,
+          "deadline": 128,
+          "dependency_group": "batch-0",
+          "criticality": "normal"
+        },
+        {
+          "id": "JOB-09",
+          "source_trace_id": "borg-anon-0009",
+          "resource_class": "C2",
+          "duration": 6,
+          "priority": 4,
+          "output_size_mb": 60,
+          "deadline": 129,
+          "dependency_group": "batch-1",
+          "criticality": "deferable"
+        },
+        {
+          "id": "JOB-10",
+          "source_trace_id": "borg-anon-0010",
+          "resource_class": "C1",
+          "duration": 7,
+          "priority": 5,
+          "output_size_mb": 20,
+          "deadline": 130,
+          "dependency_group": "batch-2",
+          "criticality": "normal"
+        },
+        {
+          "id": "JOB-11",
+          "source_trace_id": "borg-anon-0011",
+          "resource_class": "C1",
+          "duration": 8,
+          "priority": 6,
+          "output_size_mb": 30,
+          "deadline": 131,
+          "dependency_group": "batch-3",
+          "criticality": "deferable"
+        },
+        {
+          "id": "JOB-12",
+          "source_trace_id": "borg-anon-0012",
+          "resource_class": "C2",
+          "duration": 9,
+          "priority": 1,
+          "output_size_mb": 40,
+          "deadline": 132,
+          "dependency_group": "batch-0",
+          "criticality": "normal"
+        },
+        {
+          "id": "JOB-13",
+          "source_trace_id": "borg-anon-0013",
+          "resource_class": "C1",
+          "duration": 10,
+          "priority": 2,
+          "output_size_mb": 50,
+          "deadline": 133,
+          "dependency_group": "batch-1",
+          "criticality": "deferable"
+        },
+        {
+          "id": "JOB-14",
+          "source_trace_id": "borg-anon-0014",
+          "resource_class": "C1",
+          "duration": 4,
+          "priority": 3,
+          "output_size_mb": 60,
+          "deadline": 134,
+          "dependency_group": "batch-2",
+          "criticality": "normal"
+        },
+        {
+          "id": "JOB-15",
+          "source_trace_id": "borg-anon-0015",
+          "resource_class": "C2",
+          "duration": 5,
+          "priority": 4,
+          "output_size_mb": 20,
+          "deadline": 135,
+          "dependency_group": "batch-3",
+          "criticality": "deferable"
+        },
+        {
+          "id": "JOB-16",
+          "source_trace_id": "borg-anon-0016",
+          "resource_class": "C1",
+          "duration": 6,
+          "priority": 5,
+          "output_size_mb": 30,
+          "deadline": 136,
+          "dependency_group": "batch-0",
+          "criticality": "normal"
+        },
+        {
+          "id": "JOB-17",
+          "source_trace_id": "borg-anon-0017",
+          "resource_class": "C1",
+          "duration": 7,
+          "priority": 6,
+          "output_size_mb": 40,
+          "deadline": 137,
+          "dependency_group": "batch-1",
+          "criticality": "deferable"
+        },
+        {
+          "id": "JOB-18",
+          "source_trace_id": "borg-anon-0018",
+          "resource_class": "C2",
+          "duration": 8,
+          "priority": 1,
+          "output_size_mb": 50,
+          "deadline": 138,
+          "dependency_group": "batch-2",
+          "criticality": "normal"
+        },
+        {
+          "id": "JOB-19",
+          "source_trace_id": "borg-anon-0019",
+          "resource_class": "C1",
+          "duration": 9,
+          "priority": 2,
+          "output_size_mb": 60,
+          "deadline": 139,
+          "dependency_group": "batch-3",
+          "criticality": "deferable"
+        },
+        {
+          "id": "JOB-20",
+          "source_trace_id": "borg-anon-0020",
+          "resource_class": "C1",
+          "duration": 10,
+          "priority": 3,
+          "output_size_mb": 20,
+          "deadline": 140,
+          "dependency_group": "batch-0",
+          "criticality": "normal"
+        },
+        {
+          "id": "JOB-21",
+          "source_trace_id": "borg-anon-0021",
+          "resource_class": "C2",
+          "duration": 4,
+          "priority": 4,
+          "output_size_mb": 30,
+          "deadline": 141,
+          "dependency_group": "batch-1",
+          "criticality": "deferable"
+        },
+        {
+          "id": "JOB-22",
+          "source_trace_id": "borg-anon-0022",
+          "resource_class": "C1",
+          "duration": 5,
+          "priority": 5,
+          "output_size_mb": 40,
+          "deadline": 142,
+          "dependency_group": "batch-2",
+          "criticality": "normal"
+        },
+        {
+          "id": "JOB-23",
+          "source_trace_id": "borg-anon-0023",
+          "resource_class": "C1",
+          "duration": 6,
+          "priority": 6,
+          "output_size_mb": 50,
+          "deadline": 143,
+          "dependency_group": "batch-3",
+          "criticality": "deferable"
+        },
+        {
+          "id": "JOB-24",
+          "source_trace_id": "borg-anon-0024",
+          "resource_class": "C2",
+          "duration": 7,
+          "priority": 1,
+          "output_size_mb": 60,
+          "deadline": 144,
+          "dependency_group": "batch-0",
+          "criticality": "normal"
+        }
+      ],
+      "existing_schedule": [
+        {
+          "id": "NOM-H-SAT-01",
+          "kind": "health",
+          "satellite_id": "SAT-01",
+          "interval": {
+            "start": 21,
+            "end": 24
+          },
+          "job_id": null,
+          "station_id": "GS-PACIFIC-02",
+          "link": null,
+          "energy_delta": -1.0,
+          "storage_delta": 0.0
+        },
+        {
+          "id": "NOM-C-URGENT",
+          "kind": "compute",
+          "satellite_id": "SAT-07",
+          "interval": {
+            "start": 38,
+            "end": 50
+          },
+          "job_id": "JOB-URGENT",
+          "station_id": null,
+          "link": null,
+          "energy_delta": -12.0,
+          "storage_delta": 120.0
+        },
+        {
+          "id": "NOM-D-URGENT",
+          "kind": "downlink",
+          "satellite_id": "SAT-07",
+          "interval": {
+            "start": 69,
+            "end": 73
+          },
+          "job_id": "JOB-URGENT",
+          "station_id": "GS-PACIFIC-02",
+          "link": null,
+          "energy_delta": -2.0,
+          "storage_delta": -120.0
+        }
+      ],
+      "dataset_provenance": {
+        "name": "Google Borg ClusterData 2019 \u2014 committed demonstration slice",
+        "source_url": "https://github.com/google/cluster-data",
+        "license": "CC BY 4.0",
+        "version": "clusterdata-2019; synthetic committed fixture pending BigQuery extraction",
+        "derived_sha256": "fixture-only-no-production-trace",
+        "transformation_manifest": "data/borg/PROVENANCE.json"
+      },
+      "generator_version": "constellation-fixture-v1",
+      "sha256": "027967d3c725f478556071ad97a1963680ee1dce34b28a20bca7aefc8343495f"
+    },
+    "operator_text": "Preserve every health contact. Complete the urgent model-evaluation workload before the deadline. Avoid dropping previously accepted critical jobs and minimize schedule disruption.",
+    "intent": {
+      "required_obligations": [
+        "health:SAT-01",
+        "health:SAT-07",
+        "health:SAT-11",
+        "compute:JOB-URGENT",
+        "downlink:JOB-URGENT",
+        "compute:JOB-CRITICAL-01"
+      ],
+      "hard_constraints": [
+        {
+          "kind": "minimum",
+          "subject": "health_contacts",
+          "value": "all",
+          "source": "operator"
+        },
+        {
+          "kind": "exclude",
+          "subject": "failed_resources",
+          "value": true,
+          "source": "telemetry"
+        },
+        {
+          "kind": "deadline",
+          "subject": "JOB-URGENT",
+          "value": 92,
+          "source": "operator"
+        },
+        {
+          "kind": "preserve",
+          "subject": "accepted_critical_jobs",
+          "value": true,
+          "source": "operator"
+        }
+      ],
+      "soft_preferences": [
+        {
+          "kind": "minimize",
+          "subject": "schedule_disruption",
+          "value": true,
+          "source": "operator"
+        },
+        {
+          "kind": "defer_allowed",
+          "subject": "noncritical_downlinks",
+          "value": true,
+          "source": "policy"
+        }
+      ],
+      "objective_order": [
+        "health_coverage",
+        "urgent_deadline",
+        "accepted_critical_jobs",
+        "noncritical_downlinks",
+        "schedule_disruption"
+      ],
+      "accepted_defaults": [
+        "noncritical_downlinks_may_move_to_next_horizon"
+      ],
+      "unresolved_ambiguities": [],
+      "canonical_digest": "8a8bd2bbbd70a6d8a4b0e6dc073b1e2b1b0d09f71f8646cfe49dc49614731a86",
+      "gemini_model_id": "gemini-3.5-flash:structured-fixture",
+      "live_interpretation": false
+    },
+    "telemetry": [
+      {
+        "event_id": "committed-compound-failure",
+        "event_type": "compound_orbital_compute_failure",
+        "affected_resources": [
+          "GS-PACIFIC-02",
+          "COMPUTE-SAT-07",
+          "COMPUTE-SAT-08"
+        ],
+        "start_minute": 5,
+        "expected_duration_minutes": 42,
+        "confidence": 1.0,
+        "source": "committed-offline-replay",
+        "received_at": "2026-08-30T07:28:10.437927Z"
+      }
+    ],
+    "bundles": [
+      {
+        "id": "B-H-SAT-01-CW-01-2",
+        "satellite_id": "SAT-01",
+        "actions": [
+          {
+            "id": "ACT-H-SAT-01-CW-01-2",
+            "kind": "health",
+            "satellite_id": "SAT-01",
+            "interval": {
+              "start": 63,
+              "end": 66
+            },
+            "job_id": null,
+            "station_id": "GS-ATACAMA-03",
+            "link": null,
+            "energy_delta": -1.0,
+            "storage_delta": 0.0
+          }
+        ],
+        "obligations_covered": [
+          "health:SAT-01"
+        ],
+        "resources_used": [
+          "GS-ATACAMA-03",
+          "SAT-01"
+        ],
+        "energy_trajectory": [
+          100.0,
+          99.0
+        ],
+        "storage_trajectory": [
+          0.0,
+          0.0
+        ],
+        "dependencies": [],
+        "costs": {
+          "disruption": 1,
+          "delay": 0,
+          "migration": 0
+        },
+        "local_verification_digest": "dab736ddaaad3bdb2611c99246d75c945287807dc71396b3d9c00b51af69f664"
+      },
+      {
+        "id": "B-H-SAT-01-CW-01-3",
+        "satellite_id": "SAT-01",
+        "actions": [
+          {
+            "id": "ACT-H-SAT-01-CW-01-3",
+            "kind": "health",
+            "satellite_id": "SAT-01",
+            "interval": {
+              "start": 109,
+              "end": 112
+            },
+            "job_id": null,
+            "station_id": "GS-NORDIC-04",
+            "link": null,
+            "energy_delta": -1.0,
+            "storage_delta": 0.0
+          }
+        ],
+        "obligations_covered": [
+          "health:SAT-01"
+        ],
+        "resources_used": [
+          "GS-NORDIC-04",
+          "SAT-01"
+        ],
+        "energy_trajectory": [
+          100.0,
+          99.0
+        ],
+        "storage_trajectory": [
+          0.0,
+          0.0
+        ],
+        "dependencies": [],
+        "costs": {
+          "disruption": 1,
+          "delay": 0,
+          "migration": 0
+        },
+        "local_verification_digest": "74cabc6716b62f24e3e8400bacd3db4bf55ce6549e6a07edfde5ce6ffc69e8d0"
+      },
+      {
+        "id": "B-H-SAT-07-CW-07-1",
+        "satellite_id": "SAT-07",
+        "actions": [
+          {
+            "id": "ACT-H-SAT-07-CW-07-1",
+            "kind": "health",
+            "satellite_id": "SAT-07",
+            "interval": {
+              "start": 27,
+              "end": 30
+            },
+            "job_id": null,
+            "station_id": "GS-NORDIC-04",
+            "link": null,
+            "energy_delta": -1.0,
+            "storage_delta": 0.0
+          }
+        ],
+        "obligations_covered": [
+          "health:SAT-07"
+        ],
+        "resources_used": [
+          "GS-NORDIC-04",
+          "SAT-07"
+        ],
+        "energy_trajectory": [
+          100.0,
+          99.0
+        ],
+        "storage_trajectory": [
+          0.0,
+          0.0
+        ],
+        "dependencies": [],
+        "costs": {
+          "disruption": 1,
+          "delay": 0,
+          "migration": 0
+        },
+        "local_verification_digest": "7d8c8042c1c96b28c66ca902181f7e148ccd8756104db5dc1865e8b970a81b90"
+      },
+      {
+        "id": "B-H-SAT-07-CW-07-2",
+        "satellite_id": "SAT-07",
+        "actions": [
+          {
+            "id": "ACT-H-SAT-07-CW-07-2",
+            "kind": "health",
+            "satellite_id": "SAT-07",
+            "interval": {
+              "start": 69,
+              "end": 72
+            },
+            "job_id": null,
+            "station_id": "GS-ALASKA-01",
+            "link": null,
+            "energy_delta": -1.0,
+            "storage_delta": 0.0
+          }
+        ],
+        "obligations_covered": [
+          "health:SAT-07"
+        ],
+        "resources_used": [
+          "GS-ALASKA-01",
+          "SAT-07"
+        ],
+        "energy_trajectory": [
+          100.0,
+          99.0
+        ],
+        "storage_trajectory": [
+          0.0,
+          0.0
+        ],
+        "dependencies": [],
+        "costs": {
+          "disruption": 1,
+          "delay": 0,
+          "migration": 0
+        },
+        "local_verification_digest": "c14950d8f5ce9df59031b6b81c394d9db2ae7a3f62b67369b9222b4fa0ebf9a1"
+      },
+      {
+        "id": "B-H-SAT-11-CW-11-1",
+        "satellite_id": "SAT-11",
+        "actions": [
+          {
+            "id": "ACT-H-SAT-11-CW-11-1",
+            "kind": "health",
+            "satellite_id": "SAT-11",
+            "interval": {
+              "start": 31,
+              "end": 34
+            },
+            "job_id": null,
+            "station_id": "GS-NORDIC-04",
+            "link": null,
+            "energy_delta": -1.0,
+            "storage_delta": 0.0
+          }
+        ],
+        "obligations_covered": [
+          "health:SAT-11"
+        ],
+        "resources_used": [
+          "GS-NORDIC-04",
+          "SAT-11"
+        ],
+        "energy_trajectory": [
+          100.0,
+          99.0
+        ],
+        "storage_trajectory": [
+          0.0,
+          0.0
+        ],
+        "dependencies": [],
+        "costs": {
+          "disruption": 1,
+          "delay": 0,
+          "migration": 0
+        },
+        "local_verification_digest": "9d775c2c7ebc0018f1273076aac0d8e4a4a747b3e7e75088a305429d2c06720a"
+      },
+      {
+        "id": "B-H-SAT-11-CW-11-2",
+        "satellite_id": "SAT-11",
+        "actions": [
+          {
+            "id": "ACT-H-SAT-11-CW-11-2",
+            "kind": "health",
+            "satellite_id": "SAT-11",
+            "interval": {
+              "start": 73,
+              "end": 76
+            },
+            "job_id": null,
+            "station_id": "GS-ALASKA-01",
+            "link": null,
+            "energy_delta": -1.0,
+            "storage_delta": 0.0
+          }
+        ],
+        "obligations_covered": [
+          "health:SAT-11"
+        ],
+        "resources_used": [
+          "GS-ALASKA-01",
+          "SAT-11"
+        ],
+        "energy_trajectory": [
+          100.0,
+          99.0
+        ],
+        "storage_trajectory": [
+          0.0,
+          0.0
+        ],
+        "dependencies": [],
+        "costs": {
+          "disruption": 1,
+          "delay": 0,
+          "migration": 0
+        },
+        "local_verification_digest": "4cb153519eacb8fe376d11329892cba044439b82b3084b9944d3474effc3284a"
+      },
+      {
+        "id": "B-J-JOB-CRITICAL-01-SAT-03-CW-03-1",
+        "satellite_id": "SAT-03",
+        "actions": [
+          {
+            "id": "ACT-C-JOB-CRITICAL-01-SAT-03-CW-03-1",
+            "kind": "compute",
+            "satellite_id": "SAT-03",
+            "interval": {
+              "start": 11,
+              "end": 21
+            },
+            "job_id": "JOB-CRITICAL-01",
+            "station_id": null,
+            "link": null,
+            "energy_delta": -10.0,
+            "storage_delta": 90.0
+          },
+          {
+            "id": "ACT-D-JOB-CRITICAL-01-SAT-03-CW-03-1",
+            "kind": "downlink",
+            "satellite_id": "SAT-03",
+            "interval": {
+              "start": 23,
+              "end": 27
+            },
+            "job_id": "JOB-CRITICAL-01",
+            "station_id": "GS-NORDIC-04",
+            "link": null,
+            "energy_delta": -2.0,
+            "storage_delta": -90.0
+          }
+        ],
+        "obligations_covered": [
+          "compute:JOB-CRITICAL-01",
+          "downlink:JOB-CRITICAL-01"
+        ],
+        "resources_used": [
+          "COMPUTE-SAT-03",
+          "GS-NORDIC-04",
+          "SAT-03"
+        ],
+        "energy_trajectory": [
+          100.0,
+          90.0,
+          88.0
+        ],
+        "storage_trajectory": [
+          0.0,
+          90.0,
+          0.0
+        ],
+        "dependencies": [],
+        "costs": {
+          "disruption": 2,
+          "delay": 0,
+          "migration": 0
+        },
+        "local_verification_digest": "4a37dc768ee4acf0a2ea64c433d0c9d0e9af7c9aa9b495e33b232d095da8ba53"
+      },
+      {
+        "id": "B-J-JOB-CRITICAL-01-SAT-03-CW-03-2",
+        "satellite_id": "SAT-03",
+        "actions": [
+          {
+            "id": "ACT-C-JOB-CRITICAL-01-SAT-03-CW-03-2",
+            "kind": "compute",
+            "satellite_id": "SAT-03",
+            "interval": {
+              "start": 53,
+              "end": 63
+            },
+            "job_id": "JOB-CRITICAL-01",
+            "station_id": null,
+            "link": null,
+            "energy_delta": -10.0,
+            "storage_delta": 90.0
+          },
+          {
+            "id": "ACT-D-JOB-CRITICAL-01-SAT-03-CW-03-2",
+            "kind": "downlink",
+            "satellite_id": "SAT-03",
+            "interval": {
+              "start": 65,
+              "end": 69
+            },
+            "job_id": "JOB-CRITICAL-01",
+            "station_id": "GS-ALASKA-01",
+            "link": null,
+            "energy_delta": -2.0,
+            "storage_delta": -90.0
+          }
+        ],
+        "obligations_covered": [
+          "compute:JOB-CRITICAL-01",
+          "downlink:JOB-CRITICAL-01"
+        ],
+        "resources_used": [
+          "COMPUTE-SAT-03",
+          "GS-ALASKA-01",
+          "SAT-03"
+        ],
+        "energy_trajectory": [
+          100.0,
+          90.0,
+          88.0
+        ],
+        "storage_trajectory": [
+          0.0,
+          90.0,
+          0.0
+        ],
+        "dependencies": [],
+        "costs": {
+          "disruption": 2,
+          "delay": 0,
+          "migration": 0
+        },
+        "local_verification_digest": "a18e22937894576a78d149b857127fc302c7cf2ce3e2e6fe88f6336128d6d684"
+      },
+      {
+        "id": "B-J-JOB-CRITICAL-01-SAT-05-CW-05-2",
+        "satellite_id": "SAT-05",
+        "actions": [
+          {
+            "id": "ACT-C-JOB-CRITICAL-01-SAT-05-CW-05-2",
+            "kind": "compute",
+            "satellite_id": "SAT-05",
+            "interval": {
+              "start": 55,
+              "end": 65
+            },
+            "job_id": "JOB-CRITICAL-01",
+            "station_id": null,
+            "link": null,
+            "energy_delta": -10.0,
+            "storage_delta": 90.0
+          },
+          {
+            "id": "ACT-D-JOB-CRITICAL-01-SAT-05-CW-05-2",
+            "kind": "downlink",
+            "satellite_id": "SAT-05",
+            "interval": {
+              "start": 67,
+              "end": 71
+            },
+            "job_id": "JOB-CRITICAL-01",
+            "station_id": "GS-ATACAMA-03",
+            "link": null,
+            "energy_delta": -2.0,
+            "storage_delta": -90.0
+          }
+        ],
+        "obligations_covered": [
+          "compute:JOB-CRITICAL-01",
+          "downlink:JOB-CRITICAL-01"
+        ],
+        "resources_used": [
+          "COMPUTE-SAT-05",
+          "GS-ATACAMA-03",
+          "SAT-05"
+        ],
+        "energy_trajectory": [
+          100.0,
+          90.0,
+          88.0
+        ],
+        "storage_trajectory": [
+          0.0,
+          90.0,
+          0.0
+        ],
+        "dependencies": [],
+        "costs": {
+          "disruption": 2,
+          "delay": 0,
+          "migration": 2
+        },
+        "local_verification_digest": "4ddd76cf9cba0cab134bacc29048185d048a222522aab7f252dd395aee3479c1"
+      },
+      {
+        "id": "B-J-JOB-CRITICAL-01-SAT-09-CW-09-2",
+        "satellite_id": "SAT-09",
+        "actions": [
+          {
+            "id": "ACT-C-JOB-CRITICAL-01-SAT-09-CW-09-2",
+            "kind": "compute",
+            "satellite_id": "SAT-09",
+            "interval": {
+              "start": 59,
+              "end": 69
+            },
+            "job_id": "JOB-CRITICAL-01",
+            "station_id": null,
+            "link": null,
+            "energy_delta": -10.0,
+            "storage_delta": 90.0
+          },
+          {
+            "id": "ACT-D-JOB-CRITICAL-01-SAT-09-CW-09-2",
+            "kind": "downlink",
+            "satellite_id": "SAT-09",
+            "interval": {
+              "start": 71,
+              "end": 75
+            },
+            "job_id": "JOB-CRITICAL-01",
+            "station_id": "GS-ATACAMA-03",
+            "link": null,
+            "energy_delta": -2.0,
+            "storage_delta": -90.0
+          }
+        ],
+        "obligations_covered": [
+          "compute:JOB-CRITICAL-01",
+          "downlink:JOB-CRITICAL-01"
+        ],
+        "resources_used": [
+          "COMPUTE-SAT-09",
+          "GS-ATACAMA-03",
+          "SAT-09"
+        ],
+        "energy_trajectory": [
+          100.0,
+          90.0,
+          88.0
+        ],
+        "storage_trajectory": [
+          0.0,
+          90.0,
+          0.0
+        ],
+        "dependencies": [],
+        "costs": {
+          "disruption": 2,
+          "delay": 0,
+          "migration": 0
+        },
+        "local_verification_digest": "3fb912b5807f0eb0ee679dbad9140c7964d465f1d17334641133f8e29a0d7ffe"
+      },
+      {
+        "id": "B-J-JOB-CRITICAL-01-SAT-10-CW-10-1",
+        "satellite_id": "SAT-10",
+        "actions": [
+          {
+            "id": "ACT-C-JOB-CRITICAL-01-SAT-10-CW-10-1",
+            "kind": "compute",
+            "satellite_id": "SAT-10",
+            "interval": {
+              "start": 18,
+              "end": 28
+            },
+            "job_id": "JOB-CRITICAL-01",
+            "station_id": null,
+            "link": null,
+            "energy_delta": -10.0,
+            "storage_delta": 90.0
+          },
+          {
+            "id": "ACT-D-JOB-CRITICAL-01-SAT-10-CW-10-1",
+            "kind": "downlink",
+            "satellite_id": "SAT-10",
+            "interval": {
+              "start": 30,
+              "end": 34
+            },
+            "job_id": "JOB-CRITICAL-01",
+            "station_id": "GS-ATACAMA-03",
+            "link": null,
+            "energy_delta": -2.0,
+            "storage_delta": -90.0
+          }
+        ],
+        "obligations_covered": [
+          "compute:JOB-CRITICAL-01",
+          "downlink:JOB-CRITICAL-01"
+        ],
+        "resources_used": [
+          "COMPUTE-SAT-10",
+          "GS-ATACAMA-03",
+          "SAT-10"
+        ],
+        "energy_trajectory": [
+          100.0,
+          90.0,
+          88.0
+        ],
+        "storage_trajectory": [
+          0.0,
+          90.0,
+          0.0
+        ],
+        "dependencies": [],
+        "costs": {
+          "disruption": 2,
+          "delay": 0,
+          "migration": 2
+        },
+        "local_verification_digest": "1c7deb600aea249822f38b6035c6a7e57d36d395033939d70dbee349e27360d0"
+      },
+      {
+        "id": "B-J-JOB-CRITICAL-01-SAT-10-CW-10-2",
+        "satellite_id": "SAT-10",
+        "actions": [
+          {
+            "id": "ACT-C-JOB-CRITICAL-01-SAT-10-CW-10-2",
+            "kind": "compute",
+            "satellite_id": "SAT-10",
+            "interval": {
+              "start": 60,
+              "end": 70
+            },
+            "job_id": "JOB-CRITICAL-01",
+            "station_id": null,
+            "link": null,
+            "energy_delta": -10.0,
+            "storage_delta": 90.0
+          },
+          {
+            "id": "ACT-D-JOB-CRITICAL-01-SAT-10-CW-10-2",
+            "kind": "downlink",
+            "satellite_id": "SAT-10",
+            "interval": {
+              "start": 72,
+              "end": 76
+            },
+            "job_id": "JOB-CRITICAL-01",
+            "station_id": "GS-NORDIC-04",
+            "link": null,
+            "energy_delta": -2.0,
+            "storage_delta": -90.0
+          }
+        ],
+        "obligations_covered": [
+          "compute:JOB-CRITICAL-01",
+          "downlink:JOB-CRITICAL-01"
+        ],
+        "resources_used": [
+          "COMPUTE-SAT-10",
+          "GS-NORDIC-04",
+          "SAT-10"
+        ],
+        "energy_trajectory": [
+          100.0,
+          90.0,
+          88.0
+        ],
+        "storage_trajectory": [
+          0.0,
+          90.0,
+          0.0
+        ],
+        "dependencies": [],
+        "costs": {
+          "disruption": 2,
+          "delay": 0,
+          "migration": 2
+        },
+        "local_verification_digest": "58cbb8bbe5e5fde552d59d55930a3f74a22430d50a7c8aec0539981de3ab9608"
+      },
+      {
+        "id": "B-J-JOB-URGENT-SAT-03-CW-03-1",
+        "satellite_id": "SAT-03",
+        "actions": [
+          {
+            "id": "ACT-C-JOB-URGENT-SAT-03-CW-03-1",
+            "kind": "compute",
+            "satellite_id": "SAT-03",
+            "interval": {
+              "start": 9,
+              "end": 21
+            },
+            "job_id": "JOB-URGENT",
+            "station_id": null,
+            "link": null,
+            "energy_delta": -12.0,
+            "storage_delta": 120.0
+          },
+          {
+            "id": "ACT-D-JOB-URGENT-SAT-03-CW-03-1",
+            "kind": "downlink",
+            "satellite_id": "SAT-03",
+            "interval": {
+              "start": 23,
+              "end": 27
+            },
+            "job_id": "JOB-URGENT",
+            "station_id": "GS-NORDIC-04",
+            "link": null,
+            "energy_delta": -2.0,
+            "storage_delta": -120.0
+          }
+        ],
+        "obligations_covered": [
+          "compute:JOB-URGENT",
+          "downlink:JOB-URGENT"
+        ],
+        "resources_used": [
+          "COMPUTE-SAT-03",
+          "GS-NORDIC-04",
+          "SAT-03"
+        ],
+        "energy_trajectory": [
+          100.0,
+          88.0,
+          86.0
+        ],
+        "storage_trajectory": [
+          0.0,
+          120.0,
+          0.0
+        ],
+        "dependencies": [],
+        "costs": {
+          "disruption": 2,
+          "delay": 0,
+          "migration": 0
+        },
+        "local_verification_digest": "c5c09ab878b601db04628ea7e868bb8842361b5011bbacbce2d1863d798f2d61"
+      },
+      {
+        "id": "B-J-JOB-URGENT-SAT-03-CW-03-2",
+        "satellite_id": "SAT-03",
+        "actions": [
+          {
+            "id": "ACT-C-JOB-URGENT-SAT-03-CW-03-2",
+            "kind": "compute",
+            "satellite_id": "SAT-03",
+            "interval": {
+              "start": 51,
+              "end": 63
+            },
+            "job_id": "JOB-URGENT",
+            "station_id": null,
+            "link": null,
+            "energy_delta": -12.0,
+            "storage_delta": 120.0
+          },
+          {
+            "id": "ACT-D-JOB-URGENT-SAT-03-CW-03-2",
+            "kind": "downlink",
+            "satellite_id": "SAT-03",
+            "interval": {
+              "start": 65,
+              "end": 69
+            },
+            "job_id": "JOB-URGENT",
+            "station_id": "GS-ALASKA-01",
+            "link": null,
+            "energy_delta": -2.0,
+            "storage_delta": -120.0
+          }
+        ],
+        "obligations_covered": [
+          "compute:JOB-URGENT",
+          "downlink:JOB-URGENT"
+        ],
+        "resources_used": [
+          "COMPUTE-SAT-03",
+          "GS-ALASKA-01",
+          "SAT-03"
+        ],
+        "energy_trajectory": [
+          100.0,
+          88.0,
+          86.0
+        ],
+        "storage_trajectory": [
+          0.0,
+          120.0,
+          0.0
+        ],
+        "dependencies": [],
+        "costs": {
+          "disruption": 2,
+          "delay": 0,
+          "migration": 0
+        },
+        "local_verification_digest": "3e8e9fada5c1b76f7639de0059009e6a583494590fabe0b729697bdd22dfec70"
+      },
+      {
+        "id": "B-J-JOB-URGENT-SAT-05-CW-05-2",
+        "satellite_id": "SAT-05",
+        "actions": [
+          {
+            "id": "ACT-C-JOB-URGENT-SAT-05-CW-05-2",
+            "kind": "compute",
+            "satellite_id": "SAT-05",
+            "interval": {
+              "start": 53,
+              "end": 65
+            },
+            "job_id": "JOB-URGENT",
+            "station_id": null,
+            "link": null,
+            "energy_delta": -12.0,
+            "storage_delta": 120.0
+          },
+          {
+            "id": "ACT-D-JOB-URGENT-SAT-05-CW-05-2",
+            "kind": "downlink",
+            "satellite_id": "SAT-05",
+            "interval": {
+              "start": 67,
+              "end": 71
+            },
+            "job_id": "JOB-URGENT",
+            "station_id": "GS-ATACAMA-03",
+            "link": null,
+            "energy_delta": -2.0,
+            "storage_delta": -120.0
+          }
+        ],
+        "obligations_covered": [
+          "compute:JOB-URGENT",
+          "downlink:JOB-URGENT"
+        ],
+        "resources_used": [
+          "COMPUTE-SAT-05",
+          "GS-ATACAMA-03",
+          "SAT-05"
+        ],
+        "energy_trajectory": [
+          100.0,
+          88.0,
+          86.0
+        ],
+        "storage_trajectory": [
+          0.0,
+          120.0,
+          0.0
+        ],
+        "dependencies": [],
+        "costs": {
+          "disruption": 2,
+          "delay": 0,
+          "migration": 2
+        },
+        "local_verification_digest": "84ffd0bf736c411636810ec1e8911b15dedd61e565c38e39952766dcb691769d"
+      },
+      {
+        "id": "B-J-JOB-URGENT-SAT-09-CW-09-2",
+        "satellite_id": "SAT-09",
+        "actions": [
+          {
+            "id": "ACT-C-JOB-URGENT-SAT-09-CW-09-2",
+            "kind": "compute",
+            "satellite_id": "SAT-09",
+            "interval": {
+              "start": 57,
+              "end": 69
+            },
+            "job_id": "JOB-URGENT",
+            "station_id": null,
+            "link": null,
+            "energy_delta": -12.0,
+            "storage_delta": 120.0
+          },
+          {
+            "id": "ACT-D-JOB-URGENT-SAT-09-CW-09-2",
+            "kind": "downlink",
+            "satellite_id": "SAT-09",
+            "interval": {
+              "start": 71,
+              "end": 75
+            },
+            "job_id": "JOB-URGENT",
+            "station_id": "GS-ATACAMA-03",
+            "link": null,
+            "energy_delta": -2.0,
+            "storage_delta": -120.0
+          }
+        ],
+        "obligations_covered": [
+          "compute:JOB-URGENT",
+          "downlink:JOB-URGENT"
+        ],
+        "resources_used": [
+          "COMPUTE-SAT-09",
+          "GS-ATACAMA-03",
+          "SAT-09"
+        ],
+        "energy_trajectory": [
+          100.0,
+          88.0,
+          86.0
+        ],
+        "storage_trajectory": [
+          0.0,
+          120.0,
+          0.0
+        ],
+        "dependencies": [],
+        "costs": {
+          "disruption": 2,
+          "delay": 0,
+          "migration": 0
+        },
+        "local_verification_digest": "714e644357e20ff6fa36c894c6efd92e08dbb1e572ebc60381724961a43615f9"
+      },
+      {
+        "id": "B-J-JOB-URGENT-SAT-10-CW-10-1",
+        "satellite_id": "SAT-10",
+        "actions": [
+          {
+            "id": "ACT-C-JOB-URGENT-SAT-10-CW-10-1",
+            "kind": "compute",
+            "satellite_id": "SAT-10",
+            "interval": {
+              "start": 16,
+              "end": 28
+            },
+            "job_id": "JOB-URGENT",
+            "station_id": null,
+            "link": null,
+            "energy_delta": -12.0,
+            "storage_delta": 120.0
+          },
+          {
+            "id": "ACT-D-JOB-URGENT-SAT-10-CW-10-1",
+            "kind": "downlink",
+            "satellite_id": "SAT-10",
+            "interval": {
+              "start": 30,
+              "end": 34
+            },
+            "job_id": "JOB-URGENT",
+            "station_id": "GS-ATACAMA-03",
+            "link": null,
+            "energy_delta": -2.0,
+            "storage_delta": -120.0
+          }
+        ],
+        "obligations_covered": [
+          "compute:JOB-URGENT",
+          "downlink:JOB-URGENT"
+        ],
+        "resources_used": [
+          "COMPUTE-SAT-10",
+          "GS-ATACAMA-03",
+          "SAT-10"
+        ],
+        "energy_trajectory": [
+          100.0,
+          88.0,
+          86.0
+        ],
+        "storage_trajectory": [
+          0.0,
+          120.0,
+          0.0
+        ],
+        "dependencies": [],
+        "costs": {
+          "disruption": 2,
+          "delay": 0,
+          "migration": 2
+        },
+        "local_verification_digest": "cb8f968d9b596d9c325c60660a7d5339a7479c4a1f000724e698eef37abf20bd"
+      },
+      {
+        "id": "B-J-JOB-URGENT-SAT-10-CW-10-2",
+        "satellite_id": "SAT-10",
+        "actions": [
+          {
+            "id": "ACT-C-JOB-URGENT-SAT-10-CW-10-2",
+            "kind": "compute",
+            "satellite_id": "SAT-10",
+            "interval": {
+              "start": 58,
+              "end": 70
+            },
+            "job_id": "JOB-URGENT",
+            "station_id": null,
+            "link": null,
+            "energy_delta": -12.0,
+            "storage_delta": 120.0
+          },
+          {
+            "id": "ACT-D-JOB-URGENT-SAT-10-CW-10-2",
+            "kind": "downlink",
+            "satellite_id": "SAT-10",
+            "interval": {
+              "start": 72,
+              "end": 76
+            },
+            "job_id": "JOB-URGENT",
+            "station_id": "GS-NORDIC-04",
+            "link": null,
+            "energy_delta": -2.0,
+            "storage_delta": -120.0
+          }
+        ],
+        "obligations_covered": [
+          "compute:JOB-URGENT",
+          "downlink:JOB-URGENT"
+        ],
+        "resources_used": [
+          "COMPUTE-SAT-10",
+          "GS-NORDIC-04",
+          "SAT-10"
+        ],
+        "energy_trajectory": [
+          100.0,
+          88.0,
+          86.0
+        ],
+        "storage_trajectory": [
+          0.0,
+          120.0,
+          0.0
+        ],
+        "dependencies": [],
+        "costs": {
+          "disruption": 2,
+          "delay": 0,
+          "migration": 2
+        },
+        "local_verification_digest": "7d6d7c4131a09f74a7bd3da4bf1e06e38130fa9c64aefce91c1e6364596c9e59"
+      }
+    ],
+    "plan": {
+      "mission_id": "692996dc-0a30-4503-a000-f054d0da87ba",
+      "selected_bundle_ids": [
+        "B-H-SAT-01-CW-01-2",
+        "B-H-SAT-07-CW-07-1",
+        "B-H-SAT-11-CW-11-1",
+        "B-J-JOB-CRITICAL-01-SAT-03-CW-03-1",
+        "B-J-JOB-URGENT-SAT-03-CW-03-2"
+      ],
+      "compute_placement": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "qap_flow": [
+        [
+          0,
+          8,
+          2,
+          1
+        ],
+        [
+          8,
+          0,
+          6,
+          2
+        ],
+        [
+          2,
+          6,
+          0,
+          7
+        ],
+        [
+          1,
+          2,
+          7,
+          0
+        ]
+      ],
+      "qap_dist": [
+        [
+          0,
+          1,
+          4,
+          3
+        ],
+        [
+          1,
+          0,
+          2,
+          4
+        ],
+        [
+          4,
+          2,
+          0,
+          1
+        ],
+        [
+          3,
+          4,
+          1,
+          0
+        ]
+      ],
+      "qap_reported_cost": 92,
+      "postponed_jobs": [
+        "JOB-03",
+        "JOB-05",
+        "JOB-07",
+        "JOB-09",
+        "JOB-11",
+        "JOB-13",
+        "JOB-15",
+        "JOB-17",
+        "JOB-19",
+        "JOB-21",
+        "JOB-23"
+      ],
+      "uncovered_obligations": [],
+      "objective_components": {
+        "disruption": 7,
+        "delay": 0,
+        "migration": 0
+      },
+      "certainty": "verified_operation",
+      "receipts": [
+        {
+          "request_id": "offline-692996dc-0a30-4503-a000-f054d0da87ba",
+          "model": "local-bounded-exhaustive-cover",
+          "certainty": "verified_operation",
+          "receipt": {
+            "offline_precomputed": true,
+            "contract_digest": "d331fe96efcb084d50499a07029289b5eb7176353509ba573b9d5856acd5f6aa"
+          },
+          "seed": 4242,
+          "effort": "bounded"
+        },
+        {
+          "request_id": "offline-692996dc-0a30-4503-a000-f054d0da87ba-qap",
+          "model": "local-bounded-exhaustive-qap",
+          "certainty": "verified_operation",
+          "receipt": {
+            "offline_precomputed": true,
+            "contract_digest": "720638e6f149981abda4c378ece1d8f01b9e216d8c43e85ab1c238d671a17f09"
+          },
+          "seed": 4242,
+          "effort": "bounded"
+        }
+      ],
+      "verification_report": {
+        "verified": true,
+        "assurance": "verified",
+        "checks": {
+          "coverage": true,
+          "no_duplicate_jobs": true,
+          "quarantine": true,
+          "temporal": true,
+          "resources": true,
+          "deadlines": true,
+          "qap": true,
+          "provenance": true
+        },
+        "issues": [],
+        "input_digest": "3e26387c4608431157627278f6daa61da7f4b140e8bd8ed139346a744f820213",
+        "plan_digest": "dbd35342a28ac86cf1740873e6a737ccb2e48a5253811071e812d0ad08d0bfa4",
+        "verified_at": "2026-08-30T07:28:11.154721Z"
+      },
+      "apply_status": "not_applied",
+      "replay_bundle_path": null
+    },
+    "audit": [
+      {
+        "sequence": 1,
+        "type": "mission.created",
+        "message": "Nominal simulated mission loaded",
+        "at": "2026-08-30T07:28:10.435828Z",
+        "metadata": {
+          "fixture": "demo-12"
+        }
+      },
+      {
+        "sequence": 2,
+        "type": "intent.canonicalized",
+        "message": "Mission intent compiled into a canonical model",
+        "at": "2026-08-30T07:28:10.437387Z",
+        "metadata": {
+          "digest": "50daff121fd35ccb7dfae0a8cf9904e10f58cdd59edb5f92dd157ca2af75487f",
+          "live": false
+        }
+      },
+      {
+        "sequence": 3,
+        "type": "clarification.required",
+        "message": "Objective priority changes the feasible recovery policy",
+        "at": "2026-08-30T07:28:10.437394Z",
+        "metadata": {
+          "ambiguity": "urgent_deadline_vs_noncritical_downlinks"
+        }
+      },
+      {
+        "sequence": 4,
+        "type": "telemetry.accepted",
+        "message": "Telemetry event accepted and deduplicated",
+        "at": "2026-08-30T07:28:10.438491Z",
+        "metadata": {
+          "event_id": "committed-compound-failure",
+          "affected_resources": [
+            "GS-PACIFIC-02",
+            "COMPUTE-SAT-07",
+            "COMPUTE-SAT-08"
+          ]
+        }
+      },
+      {
+        "sequence": 5,
+        "type": "clarification.accepted",
+        "message": "Objective order updated from explicit operator choice",
+        "at": "2026-08-30T07:28:10.439543Z",
+        "metadata": {
+          "answer": "urgent_deadline",
+          "digest": "8a8bd2bbbd70a6d8a4b0e6dc073b1e2b1b0d09f71f8646cfe49dc49614731a86"
+        }
+      },
+      {
+        "sequence": 6,
+        "type": "resources.quarantined",
+        "message": "Failed resources excluded before candidate generation",
+        "at": "2026-08-30T07:28:10.440372Z",
+        "metadata": {}
+      },
+      {
+        "sequence": 7,
+        "type": "bundles.generated",
+        "message": "Deterministic locally valid candidate bundles generated",
+        "at": "2026-08-30T07:28:10.441069Z",
+        "metadata": {
+          "count": 18
+        }
+      },
+      {
+        "sequence": 8,
+        "type": "cortex.submitted",
+        "message": "Live Cortex unavailable; bounded local fallback selected explicitly",
+        "at": "2026-08-30T07:28:10.441236Z",
+        "metadata": {
+          "live": false,
+          "contract_digest": "d331fe96efcb084d50499a07029289b5eb7176353509ba573b9d5856acd5f6aa"
+        }
+      },
+      {
+        "sequence": 9,
+        "type": "topology.refined",
+        "message": "Compute placement candidate recomputed independently",
+        "at": "2026-08-30T07:28:11.154508Z",
+        "metadata": {
+          "live": false
+        }
+      },
+      {
+        "sequence": 10,
+        "type": "verification.started",
+        "message": "Independent mission replay started",
+        "at": "2026-08-30T07:28:11.154551Z",
+        "metadata": {}
+      },
+      {
+        "sequence": 11,
+        "type": "verification.passed",
+        "message": "All declared simulation-domain checks passed",
+        "at": "2026-08-30T07:28:11.154735Z",
+        "metadata": {
+          "plan_digest": "dbd35342a28ac86cf1740873e6a737ccb2e48a5253811071e812d0ad08d0bfa4"
+        }
+      }
+    ],
+    "created_at": "2026-08-30T07:28:10.435622Z",
+    "updated_at": "2026-08-30T07:28:11.154737Z"
+  }
+}

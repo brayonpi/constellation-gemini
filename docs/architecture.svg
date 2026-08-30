@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="title desc">
+  <title id="title">Constellation architecture</title>
+  <desc id="desc">Event-driven proof-carrying mission control across Google Cloud, Gemini, HexStellar Cortex, and an independent verifier.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8faff"/><stop offset="1" stop-color="#edf3ff"/></linearGradient>
+    <linearGradient id="dark" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#172846"/><stop offset="1" stop-color="#243d69"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#314c7a" flood-opacity=".13"/></filter>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z" fill="#6f8fc6"/></marker>
+    <style>
+      .label{font:700 18px Manrope,Arial,sans-serif;fill:#17233b}.small{font:500 13px Manrope,Arial,sans-serif;fill:#71809a}.tag{font:700 11px Manrope,Arial,sans-serif;letter-spacing:1.2px;fill:#6380b3}.box{fill:#fff;stroke:#dce4f1;stroke-width:1.5;rx:16;filter:url(#shadow)}.edge{fill:none;stroke:#6f8fc6;stroke-width:2;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1400" height="760" rx="28" fill="url(#bg)"/>
+  <text x="70" y="72" class="tag">CONSTELLATION / PROOF-CARRYING WORKFLOW</text>
+  <text x="70" y="111" class="label" style="font-size:30px">Say the mission. Prove the plan.</text>
+  <rect x="55" y="145" width="1290" height="545" rx="24" fill="#fff" opacity=".5" stroke="#d8e2f1"/>
+  <path class="edge" d="M250 275H330"/><path class="edge" d="M530 275H605"/><path class="edge" d="M805 275H880"/><path class="edge" d="M1080 275H1155"/>
+  <path class="edge" d="M1255 340V460H1110"/><path class="edge" d="M910 535H815"/><path class="edge" d="M615 535H520"/><path class="edge" d="M320 535H245"/>
+  <g transform="translate(75 215)"><rect class="box" width="175" height="120"/><text x="22" y="31" class="tag">EVENT</text><text x="22" y="64" class="label">Operator +</text><text x="22" y="88" class="label">telemetry</text><text x="22" y="108" class="small">Untrusted input</text></g>
+  <g transform="translate(330 215)"><rect class="box" width="200" height="120"/><text x="22" y="31" class="tag">GOOGLE CLOUD</text><text x="22" y="66" class="label">Pub/Sub</text><text x="22" y="91" class="small">Event ingress + dedupe</text></g>
+  <g transform="translate(605 215)"><rect class="box" width="200" height="120"/><text x="22" y="31" class="tag">COORDINATION</text><text x="22" y="66" class="label">Google ADK</text><text x="22" y="91" class="small">Auditable state machine</text></g>
+  <g transform="translate(880 215)"><rect class="box" width="200" height="120"/><text x="22" y="31" class="tag">UNDERSTAND</text><text x="22" y="66" class="label">Gemini 3.5 Flash</text><text x="22" y="91" class="small">Structured intent</text></g>
+  <g transform="translate(1155 215)"><rect width="175" height="120" rx="16" fill="url(#dark)" filter="url(#shadow)"/><text x="22" y="31" class="tag" style="fill:#91abe0">CANONICALIZE</text><text x="22" y="66" class="label" style="fill:white">Mission model</text><text x="22" y="91" class="small" style="fill:#aec0df">SHA-256 + diff gate</text></g>
+  <g transform="translate(910 475)"><rect class="box" width="200" height="120"/><text x="22" y="31" class="tag">SEARCH</text><text x="22" y="66" class="label">HexStellar Cortex</text><text x="22" y="91" class="small">Public cover + QAP API</text></g>
+  <g transform="translate(615 475)"><rect width="200" height="120" rx="16" fill="#eaf8f3" stroke="#b9dfd1" filter="url(#shadow)"/><text x="22" y="31" class="tag" style="fill:#278267">REFUTE</text><text x="22" y="66" class="label">Independent verifier</text><text x="22" y="91" class="small">Original-domain replay</text></g>
+  <g transform="translate(320 475)"><rect class="box" width="200" height="120"/><text x="22" y="31" class="tag">ACT</text><text x="22" y="66" class="label">Sandbox patch</text><text x="22" y="91" class="small">Verified plans only</text></g>
+  <g transform="translate(75 475)"><rect class="box" width="170" height="120"/><text x="22" y="31" class="tag">EVIDENCE</text><text x="22" y="66" class="label">Replay bundle</text><text x="22" y="91" class="small">Receipt + witnesses</text></g>
+  <rect x="585" y="444" width="560" height="180" rx="23" fill="none" stroke="#32a67f" stroke-width="2" stroke-dasharray="7 7"/>
+  <text x="603" y="649" class="tag" style="fill:#278267">TRUST BOUNDARY — NO VERIFIED REPLAY, NO ACTION</text>
+</svg>

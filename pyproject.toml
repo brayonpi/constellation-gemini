@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "constellation-mission-control"
+version = "0.1.0"
+description = "Proof-carrying mission control for a simulated orbital AI constellation"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+dependencies = [
+  "fastapi>=0.116,<1",
+  "httpx>=0.28,<1",
+  "pydantic>=2.11,<3",
+  "pydantic-settings>=2.10,<3",
+  "python-multipart>=0.0.20,<1",
+  "uvicorn[standard]>=0.35,<1",
+]
+
+[project.optional-dependencies]
+google = [
+  "google-adk[gcp]>=2.0,<3",
+  "google-cloud-firestore>=2.21,<3",
+  "google-cloud-pubsub>=2.31,<3",
+  "google-cloud-storage>=3.2,<4",
+  "google-cloud-tasks>=2.19,<3",
+  "google-genai>=2,<3",
+]
+
+dev = [
+  "pytest>=8.4,<9",
+  "pytest-asyncio>=1.1,<2",
+  "pytest-cov>=6.2,<7",
+  "ruff>=0.12,<1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["apps/api/constellation"]
+
+[tool.pytest.ini_options]
+pythonpath = ["apps/api"]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["B008"]

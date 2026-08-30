@@ -1,0 +1,15 @@
+{
+  "status": "fixture_only",
+  "source_name": "Google Borg ClusterData 2019",
+  "source_url": "https://github.com/google/cluster-data",
+  "license": "CC BY 4.0",
+  "dataset_version": "clusterdata-2019",
+  "extraction_timestamp_utc": null,
+  "query": "data/borg/extract.sql",
+  "source_row_count": null,
+  "derived_row_count": 24,
+  "source_sha256": null,
+  "derived_sha256": "fixture-only-no-production-trace",
+  "transformation": "The committed CI fixture uses anonymized, trace-shaped records until an authorized BigQuery extraction is frozen. CPU and memory classes are not described as TPU ranks.",
+  "claim_boundary": "Constellation does not reproduce or benchmark the Borg scheduler. The orbital objective and all mission geometry are project-created simulations."
+}

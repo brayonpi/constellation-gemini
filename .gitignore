@@ -1,0 +1,16 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+*.sqlite3
+node_modules/
+dist/
+coverage/
+.terraform/
+*.tfstate*
+artifacts/
