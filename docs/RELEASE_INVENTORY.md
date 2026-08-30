@@ -16,7 +16,7 @@ Private helpers are reviewed with their owning module and remain visible to cove
 | `POST /api/v1/missions` | Idempotent sandbox mission creation | API idempotency and validation tests | Pass locally |
 | `POST /api/v1/missions/{id}/intent` | Gemini/fixture interpretation; typed canonical IR | API, compiler, and agent tests | Pass locally; live Gemini pending |
 | `POST /api/v1/missions/{id}/events` | Idempotent untrusted telemetry ingestion | API and workflow tests | Pass locally |
-| `POST /api/v1/missions/{id}/clarifications` | Accepts either declared material priority | API, compiler, and UI tests | Pass locally |
+| `POST /api/v1/missions/{id}/clarifications` | Accepts either declared material priority and recompiles rules/digest | API, compiler, workflow, and UI tests | Pass locally; unsupported all-downlink proof stops before Cortex |
 | `POST /api/v1/missions/{id}/plan` | Creates Cloud Task in cloud mode; local background task in local mode | API, cloud contract, and workflow tests | Pass locally; deployed task pending |
 | `POST /api/v1/missions/{id}/retry` | Requeues only explicit safe failure states | API and state-gate tests | Pass locally; deployed task pending |
 | `POST /api/v1/missions/{id}/verify` | Replays without Gemini or Cortex | API and verifier tests | Pass locally |
@@ -75,15 +75,16 @@ Terminal failure states are explicit: `INTERPRETATION_FAILED`, `CONTRACT_REJECTE
 
 | Component or module | Responsibility | Evidence | Residual risk |
 |---|---|---|---|
-| `App` | Restored mission, state-directed narrative, launch/clarify/plan/apply orchestration | claim test and browser E2E inspection | Full Playwright matrix pending |
+| `App` | Restored mission, state-directed narrative, launch/clarify/plan/apply orchestration, and visible fail-closed alternative choice | claim test and browser E2E inspection | Full Playwright matrix pending |
 | `OrbitalGlobe` | Data-driven R3F globe, incident/recovery paths, accessible 2D/text fallback | browser and production-build inspection | Cross-device GPU matrix pending |
 | `Timeline` | Horizon-derived compute/contact/resource/diff evidence | component tests and browser inspection | Mobile visual regression pending |
 | `DecisionTrace` | Filterable observable run events; no chain-of-thought | browser inspection | Cloud proxy reconnect pending |
 | `EvidenceRoom` | Receipts, checks, counterexamples, manifests, downloads | component/API tests | GCS live retrieval pending |
 | `api` | Typed HTTP mutations, random idempotency keys, EventSource/download URLs | API transformation tests | Hosted rate/load tests pending |
+| `links` | Single allowlisted map for public Cortex docs, worked examples, public CLI/client, and project source | exact-URL unit tests | Constellation source remains private until release approval |
 | `types` | TypeScript projection of public mission/evidence schemas | strict TypeScript build | Generated OpenAPI types are not yet used |
 
-The main JavaScript entry chunk is approximately 226 kB minified and 71 kB gzip.
+The main JavaScript entry chunk is approximately 233 kB minified and 74 kB gzip.
 The lazily loaded globe chunk is approximately 866 kB minified and 233 kB gzip; this is a recorded performance warning, not a hidden pass.
 
 ## Runtime configuration
@@ -140,7 +141,7 @@ They remain locally unverified because Terraform is not installed in the current
 | Google | Google ADK, Firestore, Pub/Sub, Cloud Storage, Cloud Tasks, Google Gen AI SDK | Isolated optional group; container installation passed |
 | Python development | pytest, pytest-asyncio, pytest-cov, pip-audit, Ruff | Test/lint/audit commands pass; one Starlette TestClient deprecation warning recorded |
 | Web runtime | React, React DOM, Three.js, React Three Fiber, Lucide React | Lockfile present; `npm audit --omit=dev` reports zero known vulnerabilities |
-| Web build/test | Vite, TypeScript, ESLint, Testing Library, jsdom, Vitest | Strict build, lint, and six component/unit tests pass |
+| Web build/test | Vite, TypeScript, ESLint, Testing Library, jsdom, Vitest | Strict build, lint, and seven component/unit tests pass |
 
 Transitive JavaScript versions are frozen by `package-lock.json` and installed with `npm ci` in CI and Docker.
 Python production versions are bounded rather than fully hash-locked; an immutable container digest is the intended deployment unit.
@@ -159,8 +160,10 @@ Python production versions are bounded rather than fully hash-locked; an immutab
 | Google Borg ClusterData 2019 | Official Google repository | Current fixture is trace-shaped, not yet Borg-derived |
 | All Things Agentic requirements | Official Devpost rules | Deadline and submission gates checked on 2026-08-30 |
 | HexStellar IP boundary | Public adapter and explicit disclosure | Proprietary engine/runtime absent; Enterprise Runtime separate |
+| Cortex documentation and CLI/client | Official HexStellar docs and `brayonpi/hexstellar` public repository | Judge links use the intended public surfaces; no private engine link |
 
-All committed external references are first-party Google, Google Research, Google Cloud, official Google GitHub, or Devpost contest sources.
+All committed product and contest references are first-party Google, Google Research, Google Cloud,
+official Google GitHub, official Devpost, or official public HexStellar surfaces.
 
 ## Fallback inventory
 
@@ -171,6 +174,7 @@ All committed external references are first-party Google, Google Research, Googl
 | Cortex absent in declared local mode | Bounded deterministic cover; `local_deterministic` | Only after full verification |
 | Cortex configured live but unavailable | Stop at `CORTEX_UNAVAILABLE`; durable retry only | No |
 | Cortex contract rejected | Stop at `CONTRACT_REJECTED` with persisted evidence | No |
+| Selected policy requires unmodeled prior output state | Recompile the changed rules, record the new digest, and stop before Cortex with an explicit boundary | No |
 | Mission impossible | Report uncovered obligations/counterexample | No |
 | QAP rejected or invalid | Retain valid cover result and record rejection | Cover plan only after verification |
 | Verifier failure | Preserve evidence and specific witness | No |
@@ -189,13 +193,13 @@ All committed external references are first-party Google, Google Research, Googl
 | Verifier and tampering | `test_verifier_counterexamples.py`, `test_runtime_boundaries.py` | Pass |
 | Artifacts and replay | `test_artifacts.py` | Pass |
 | Dataset transformation | `test_borg_transform.py` | Pass for fixture pipeline; extraction claim abstained |
-| Frontend | `App.test.tsx`, `api.test.ts`, `Timeline.test.tsx`, `Evidence.test.tsx` | Six tests pass |
+| Frontend | `App.test.tsx`, `api.test.ts`, `Timeline.test.tsx`, `Evidence.test.tsx` | Seven tests pass, including exact public-link and plain-language evidence labels |
 | Static/build | Ruff, TypeScript strict, ESLint, Vite production build | Pass |
 | Supply chain | `pip-audit`, `npm audit --omit=dev` | No known published-package vulnerabilities locally |
 | Container | Production build, UID, `/health/live`, `/health/ready` | Pass locally as UID 65532 |
 | Cloud/IaC | Terraform fmt/validate, Trivy, gitleaks | CI configured; frozen-tree evidence pending |
 
-Current Python result: 61 tests passing and 90.23% statement coverage.
+Current Python result: 62 tests passing and 90.31% statement coverage.
 The separate `coverage report --fail-under=90` command is the authoritative threshold gate.
 
 ## Release disposition

@@ -4,29 +4,71 @@
 
 ![Constellation — proof-carrying mission control](docs/assets/constellation-cover.png)
 
-Constellation is proof-carrying mission control for a deterministic orbital AI simulation.
-Gemini 3.5 Flash interprets operator intent, Google ADK coordinates the workflow, HexStellar Cortex searches a declared combinatorial contract, and an independent Python verifier decides whether the resulting timeline may update the sandbox.
+Constellation answers a simple question: when an orbital compute network breaks, can AI create a
+replacement schedule without quietly breaking another rule?
 
-Constellation addresses a specific operational friction inside HexStellar research demonstrations: turning an event-driven change request into a reproducible recovery plan without manually reconciling compute, contact, storage, energy, deadline, and failure constraints.
-After one materially necessary clarification, the workflow resumes autonomously from candidate generation through verification and sandbox mutation.
+The demo separates that job into three parts:
+
+1. **Gemini turns the operator's words into a checklist.** It identifies required work, deadlines,
+   failed hardware, and the one priority that needs human clarification.
+2. **HexStellar Cortex compares complete recovery plans.** It searches combinations of schedule
+   pieces while respecting the formal contract.
+3. **A separate Python program checks the answer minute by minute.** If a job is missed, a station is
+   double-booked, a deadline is late, or failed hardware is used, the plan cannot update the sandbox.
+
+No system grades its own homework. Gemini cannot approve its proposal, Cortex cannot change the
+mission, and the independent checker only unlocks the exact plan it checked.
+
+## Why this matters
+
+An AI-generated plan can sound convincing while hiding a small but serious mistake. One contact can
+overlap another. A job can finish after its deadline. A failed computer can accidentally reappear.
+Those mistakes are hard to spot in prose and easy to find when the plan becomes a testable software
+contract.
+
+Constellation turns a plausible answer into an inspectable answer. A judge can watch the work happen,
+open the exact failure when a rule is broken, download every input and receipt, and rerun the checker
+without Gemini, Cortex, or an internet connection.
+
+Start with the [60-second judge guide](docs/JUDGE_GUIDE.md), read
+[how Cortex works](https://docs.hexstellar.com/), or inspect the
+[public HexStellar CLI/client](https://github.com/brayonpi/hexstellar).
 
 ## What the demo proves
 
-The primary scenario contains 12 simulated satellites, four synthetic ground stations, 24 trace-shaped compute workloads, 36 generated contact windows, storage and energy limits, required health contacts, and a valid nominal schedule.
-A Pub/Sub event removes a ground station and isolates two compute resources while an urgent workload arrives.
+The primary scenario is a deterministic software simulation with 12 satellites, four ground stations,
+24 compute jobs, 36 communication windows, storage and energy limits, required health checks, and a
+valid starting schedule. A Pub/Sub event removes one ground station and isolates two compute nodes
+while an urgent job arrives.
 
 The application then:
 
-1. compiles operator text into a canonical `MissionIntent`;
-2. pauses if the missing priority changes the objective order;
-3. generates locally valid mission bundles deterministically;
-4. submits a `cover` contract to the public HexStellar Cortex HTTPS API;
-5. independently replays coverage, time, resources, quarantine, deadlines, provenance, and placement;
-6. applies only a verified result to the sandbox; and
-7. exposes the mission patch, Cortex receipt, counterexamples, hashes, and replay bundle.
+1. freezes the operator's meaning as a fingerprinted `MissionIntent`;
+2. pauses because the missing priority would change which plan wins;
+3. creates deterministic, locally checked schedule pieces;
+4. sends a public `cover` contract to the HexStellar Cortex HTTPS API;
+5. separately replays every declared scheduling and resource rule;
+6. updates only the sandbox, and only after every rule passes; and
+7. exposes the plan change, Cortex receipt, exact failures, fingerprints, logs, and replay ZIP.
 
-“Verified” means only that the committed verifier established the properties reported in its check list for this deterministic simulation.
-It does not mean physical spacecraft safety, general semantic correctness, or global optimality.
+Here, **verified** has a narrow meaning: the committed Python checker passed its declared rules for
+this exact simulated input and plan. It does not mean real spacecraft are safe, every sentence is
+understood perfectly, or the combined plan is globally optimal.
+
+The clarification is not decorative. Choosing the urgent deadline produces the successful golden
+path. Choosing every lower-priority download changes both the formal rules and the fingerprint, then
+stops before Cortex because the fixture cannot prove that every previously computed output exists.
+That explicit abstention prevents the application from inventing missing mission state.
+
+## See Cortex for yourself
+
+- [How Cortex works](https://docs.hexstellar.com/) explains the public contract, outputs, certainty
+  labels, and verification workflow.
+- [Worked examples](https://docs.hexstellar.com/examples/) show the public problem interfaces in use.
+- [HexStellar CLI/client](https://github.com/brayonpi/hexstellar) is the public repository judges and
+  engineers can inspect. It is the supported client boundary, not the proprietary Cortex engine.
+- [Constellation source](https://github.com/brayonpi/constellation) is intentionally private during
+  development and will become anonymously accessible only after the release audit and owner approval.
 
 ## Quick start
 
@@ -36,7 +78,7 @@ Requirements: Python 3.12+, Node.js 20+, and npm.
 cp .env.example .env
 python3 -m venv .venv
 .venv/bin/python -m pip install -e '.[dev]'
-cd apps/web && npm install && cd ../..
+cd apps/web && npm ci && cd ../..
 ./scripts/dev.sh
 ```
 
@@ -93,7 +135,10 @@ flowchart LR
     K --> U
 ```
 
-See [Architecture](docs/ARCHITECTURE.md), [Security](docs/SECURITY.md), [Claims and limitations](docs/CLAIMS_AND_LIMITATIONS.md), [Evidence language](docs/EVIDENCE.md), [Release inventory](docs/RELEASE_INVENTORY.md), [Release audit](docs/RELEASE_AUDIT.md), and [Submission checklist](docs/SUBMISSION.md).
+See the [Judge guide](docs/JUDGE_GUIDE.md), [Architecture](docs/ARCHITECTURE.md),
+[Security](docs/SECURITY.md), [Claims and limitations](docs/CLAIMS_AND_LIMITATIONS.md),
+[Evidence language](docs/EVIDENCE.md), [Release inventory](docs/RELEASE_INVENTORY.md),
+[Release audit](docs/RELEASE_AUDIT.md), and [Submission checklist](docs/SUBMISSION.md).
 
 ## Data and simulation boundaries
 

@@ -19,8 +19,8 @@ The repository must remain private until the owner explicitly approves publicati
 | Independent verifier | Coverage, temporal, resource, quarantine, deadline, QAP, receipt and tamper tests | Pass | Establishes only implemented simulation-domain properties |
 | Replay artifacts | Deterministic ZIP, per-file hashes, adversarial AI prompt, network-free verification | Pass locally | Release ZIP hash not frozen yet |
 | API | RFC-style errors, security headers, SSE resume, logs, timeline, artifact and apply tests | Pass locally | Load/rate-limit test pending hosted environment |
-| Frontend | TypeScript strict build, lint, state transformations, timeline/evidence interactions | Pass locally | Full Playwright/axe/visual matrix is not yet committed |
-| Python coverage | 61 tests; 90.23% overall; agent 100%, service 90.53%, verifier 91.67%, compiler 95.56%, API 86.92%, Cortex 86.23% | Pass | Firestore adapter is the lowest-covered deployment-specific module |
+| Frontend | TypeScript strict build, lint, state transformations, timeline/evidence interactions, and exact public-link tests | Pass locally | Full Playwright/axe/visual matrix is not yet committed |
+| Python coverage | 62 tests; 90.31% overall; agent 100%, service 90.69%, verifier 91.67%, compiler 96.30%, API 86.92%, Cortex 86.23% | Pass | Firestore adapter is the lowest-covered deployment-specific module |
 | Container | Reproducible `npm ci` build, immutable local image, non-root UID 65532, liveness/readiness smoke | Pass locally | Trivy scan and registry digest pending |
 | Release inventory | Routes, public functions, schemas, components, configuration, Terraform, dependencies, claims, fallbacks, and tests | Pass as inventory | Live evidence dispositions remain blocked |
 
@@ -28,14 +28,15 @@ The repository must remain private until the owner explicitly approves publicati
 
 | Surface | Evidence | Status | Residual risk |
 |---|---|---|---|
-| Hero and narrative | Browser-inspected nominal state and deterministic cover | Pass locally | Final anonymous hosted review pending |
+| Hero and narrative | Plain-language understand/search/check flow, visible action lock, and public Cortex documentation/CLI paths | Pass in unit/static review | Final anonymous hosted browser review pending |
 | Incident transition | Browser-inspected telemetry and clarification state | Pass locally | Pub/Sub-triggered hosted capture pending |
 | Recovery and diff | Browser-inspected verified and applied states | Pass locally | Live Cortex/Gemini labels pending |
 | Globe | React Three Fiber view plus textual/WebGL fallback | Pass locally | Cross-device frame-rate matrix pending |
 | Timeline | Derived horizon, resource rows, metrics and action inspector | Pass locally | Mobile visual regression pending |
 | Evidence stream | SSE-driven event list, filters, correlation and NDJSON | Pass locally | Reconnect under real Cloud Run proxy pending |
-| Evidence room | Receipts, checks, counterexamples, artifacts and downloads | Pass locally | Cloud Storage retrieval pending |
+| Evidence room | Plain-language check results, receipts, counterexamples, artifacts, replay download, and public Cortex learning paths | Pass locally | Cloud Storage retrieval pending |
 | Reduced motion | CSS and renderer behavior implemented | Implemented | Automated WCAG/axe result pending |
+| Material clarification | Both choices alter the formal contract; the unsupported all-downlink proof stops visibly before Cortex instead of fabricating state | Pass locally | Successful demo path intentionally uses urgent-deadline priority |
 
 ## Submission audit
 
@@ -61,7 +62,7 @@ The repository must remain private until the owner explicitly approves publicati
 
 The exhaustive surface map is [RELEASE_INVENTORY.md](RELEASE_INVENTORY.md).
 The local production build reports one intentional residual performance warning: the lazy Three.js globe chunk is approximately 866 kB minified and 233 kB gzip.
-The main application chunk remains approximately 226 kB minified and 71 kB gzip.
+The main application chunk is approximately 233 kB minified and 74 kB gzip.
 Python tests also report a Starlette TestClient deprecation warning involving the future `httpx2` migration; it does not affect the deployed runtime but is retained as a tooling follow-up.
 
 ## Final release gate

@@ -9,6 +9,18 @@ const colors: Record<Action['kind'], string> = {
   health: '#53d6a5',
   transfer: '#f6b957',
 }
+const actionLabels: Record<Action['kind'], string> = {
+  compute: 'run job',
+  downlink: 'send data',
+  health: 'health check',
+  transfer: 'move data',
+}
+const viewLabels: Record<MissionView, string> = {
+  nominal: 'before failure',
+  incident: 'failure impact',
+  recovered: 'new plan',
+  diff: 'what changed',
+}
 
 type TimelineAction = Action & { source: 'nominal' | 'recovered' }
 
@@ -49,21 +61,22 @@ export function Timeline({ mission, view }: { mission?: Mission; view: MissionVi
     <section className="panel timeline-panel" aria-labelledby="timeline-title">
       <div className="panel-heading timeline-heading">
         <div>
-          <span className="eyebrow">Mission timeline · {view}</span>
-          <h2 id="timeline-title">{view === 'diff' ? 'Nominal ↔ recovered schedule' : `${view} schedule`}</h2>
+          <span className="eyebrow">Minute-by-minute checked schedule · {viewLabels[view]}</span>
+          <h2 id="timeline-title">{view === 'diff' ? 'Before and after: every changed reservation' : `The ${viewLabels[view]} schedule`}</h2>
         </div>
         <div className="timeline-metrics" aria-label="Selected plan resource summary">
-          <span><BatteryCharging size={13} /> Energy floor <strong>{finalEnergy ?? '—'}</strong></span>
-          <span><Database size={13} /> Peak storage <strong>{peakStorage ?? '—'}</strong></span>
-          <span><RadioTower size={13} /> Stations <strong>{stationRows.length}</strong></span>
+          <span><BatteryCharging size={13} /> Lowest energy left <strong>{finalEnergy ?? '—'}</strong></span>
+          <span><Database size={13} /> Most storage used <strong>{peakStorage ?? '—'}</strong></span>
+          <span><RadioTower size={13} /> Stations used <strong>{stationRows.length}</strong></span>
         </div>
       </div>
+      <p className="timeline-explainer">Each bar reserves time on one satellite or station. Two incompatible bars on the same resource would block the plan.</p>
       <div className="timeline-legend">
         {(Object.entries(colors) as Array<[Action['kind'], string]>).map(([kind, color]) => (
-          <span key={kind}><i style={{ background: color }} />{kind}</span>
+          <span key={kind}><i style={{ background: color }} />{actionLabels[kind]}</span>
         ))}
         {view === 'diff' && <>
-          <span><i className="outline-key" />nominal</span><span><i className="solid-key" />recovered</span>
+          <span><i className="outline-key" />before failure</span><span><i className="solid-key" />new plan</span>
         </>}
       </div>
       <div className="timeline-scale" style={{ marginLeft: 116 }}>
@@ -79,7 +92,7 @@ export function Timeline({ mission, view }: { mission?: Mission; view: MissionVi
                 <button
                   className={`timeline-action source-${action.source}`}
                   key={`${action.source}-${action.id}-${row.id}`}
-                  aria-label={`${action.kind} on ${row.label}, minute ${action.interval.start} to ${action.interval.end}`}
+                  aria-label={`${actionLabels[action.kind]} on ${row.label}, minute ${action.interval.start} to ${action.interval.end}`}
                   onClick={() => setFocused(action)}
                   style={{
                     left: `${(action.interval.start / horizon) * 100}%`,
@@ -93,10 +106,10 @@ export function Timeline({ mission, view }: { mission?: Mission; view: MissionVi
         ))}
       </div>
       {focused && <div className="timeline-inspector" role="status">
-        <div><span>Action</span><strong>{focused.id}</strong></div>
-        <div><span>Interval</span><strong>{focused.interval.start}–{focused.interval.end} min</strong></div>
+        <div><span>Schedule item</span><strong>{focused.id}</strong></div>
+        <div><span>Reserved minutes</span><strong>{focused.interval.start}–{focused.interval.end} min</strong></div>
         <div><span>Resource</span><strong>{focused.station_id ?? focused.satellite_id}</strong></div>
-        <div><span>Trajectory</span><strong>{focused.energy_delta} energy · {focused.storage_delta} MB</strong></div>
+        <div><span>Resource change</span><strong>{focused.energy_delta} energy · {focused.storage_delta} MB storage</strong></div>
         <button onClick={() => setFocused(undefined)}>Close</button>
       </div>}
     </section>

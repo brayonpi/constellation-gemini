@@ -45,6 +45,15 @@ def test_material_priority_change_changes_digest() -> None:
     downlinks = compile_text(DEFAULT_OPERATOR_TEXT, "noncritical_downlinks")
     assert urgent.canonical_digest != downlinks.canonical_digest
     assert urgent.objective_order != downlinks.objective_order
+    assert urgent.hard_constraints != downlinks.hard_constraints
+    assert any(
+        item.subject == "noncritical_downlinks" and item.kind == "preserve"
+        for item in downlinks.hard_constraints
+    )
+    assert not any(
+        item.subject == "noncritical_downlinks" and item.kind == "defer_allowed"
+        for item in downlinks.soft_preferences
+    )
 
 
 def test_live_semantic_drift_fails_closed() -> None:

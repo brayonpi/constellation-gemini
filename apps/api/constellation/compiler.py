@@ -20,6 +20,7 @@ class SemanticCompilationError(ValueError):
 def _canonical_payload(priority_choice: str | None) -> dict[str, Any]:
     objective_order = ["health_coverage"]
     ambiguities: list[str] = []
+    accepted_defaults: list[str] = []
     if priority_choice is None:
         ambiguities.append("urgent_deadline_vs_noncritical_downlinks")
         objective_order.extend(["operator_clarification_required", "schedule_disruption"])
@@ -35,13 +36,17 @@ def _canonical_payload(priority_choice: str | None) -> dict[str, Any]:
     hard = [
         Constraint(kind="minimum", subject="health_contacts", value="all", source="operator"),
         Constraint(kind="exclude", subject="failed_resources", value=True, source="telemetry"),
-        Constraint(kind="deadline", subject="JOB-URGENT", value=92, source="operator"),
         Constraint(kind="preserve", subject="accepted_critical_jobs", value=True, source="operator"),
     ]
-    soft = [
-        Constraint(kind="minimize", subject="schedule_disruption", value=True, source="operator"),
-        Constraint(kind="defer_allowed", subject="noncritical_downlinks", value=True, source="policy"),
-    ]
+    soft = [Constraint(kind="minimize", subject="schedule_disruption", value=True, source="operator")]
+    if priority_choice == "urgent_deadline":
+        hard.append(Constraint(kind="deadline", subject="JOB-URGENT", value=92, source="operator"))
+        soft.append(Constraint(kind="defer_allowed", subject="noncritical_downlinks", value=True, source="policy"))
+        accepted_defaults.append("noncritical_downlinks_may_move_to_next_horizon")
+    elif priority_choice == "noncritical_downlinks":
+        hard.append(Constraint(kind="preserve", subject="noncritical_downlinks", value="all", source="operator"))
+        soft.append(Constraint(kind="prefer_deadline", subject="JOB-URGENT", value=92, source="operator"))
+        accepted_defaults.append("urgent_deadline_may_move_within_next_horizon")
     return {
         "required_obligations": [
             "health:SAT-01",
@@ -54,7 +59,7 @@ def _canonical_payload(priority_choice: str | None) -> dict[str, Any]:
         "hard_constraints": [item.model_dump(mode="json") for item in hard],
         "soft_preferences": [item.model_dump(mode="json") for item in soft],
         "objective_order": objective_order,
-        "accepted_defaults": ["noncritical_downlinks_may_move_to_next_horizon"],
+        "accepted_defaults": accepted_defaults,
         "unresolved_ambiguities": ambiguities,
     }
 

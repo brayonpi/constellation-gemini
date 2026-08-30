@@ -191,8 +191,14 @@ class GlobeErrorBoundary extends Component<{ children: ReactNode; fallback: Reac
 
 function AccessibleFallback({ mission, view }: { mission?: Mission; view: MissionView }) {
   const affected = mission?.telemetry.flatMap((event) => event.affected_resources) ?? []
+  const labels: Record<MissionView, string> = {
+    nominal: 'Network before failure',
+    incident: 'Network during the failure',
+    recovered: 'Network using the checked plan',
+    diff: 'What the checked plan changed',
+  }
   return <div className="globe-fallback" role="img" aria-label="Textual orbital mission state">
-    <strong>{view === 'nominal' ? 'Nominal constellation' : `${view} mission state`}</strong>
+    <strong>{labels[view]}</strong>
     <p>{mission?.snapshot.satellites.length ?? 12} simulated satellites · {affected.length} affected resources</p>
     {affected.length > 0 && <code>{affected.join(' · ')}</code>}
   </div>
@@ -221,8 +227,8 @@ export function OrbitalGlobe({ mission, view }: { mission?: Mission; view: Missi
     </div>
     <span className="sr-only">
       {view === 'nominal'
-        ? 'Nominal simulated constellation.'
-        : `Mission ${view}. Affected resources are ${mission?.telemetry.flatMap((event) => event.affected_resources).join(', ') || 'pending'}.`}
+        ? 'Simulated network before the failure.'
+        : `Simulated network view: ${view}. Affected resources are ${mission?.telemetry.flatMap((event) => event.affected_resources).join(', ') || 'pending'}.`}
     </span>
   </div>
 }

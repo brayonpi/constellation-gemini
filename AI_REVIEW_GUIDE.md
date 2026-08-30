@@ -1,5 +1,21 @@
 # Independent AI Review Guide
 
+## 60-second orientation
+
+Constellation tests one concrete idea: an AI-generated recovery schedule should not be allowed to
+approve itself.
+
+- Gemini turns the operator's words into a checklist.
+- HexStellar Cortex searches combinations of complete schedule pieces.
+- A separate Python checker replays the proposed schedule minute by minute.
+- Any missed task, collision, late deadline, resource overflow, or use of failed hardware blocks the
+  sandbox update.
+- “Verified” applies only to the declared rules in this deterministic simulation. It is not a claim
+  about real spacecraft safety, universal intelligence, optimality, or performance superiority.
+
+The most important implementation boundary to trace is therefore simple: **understand, search, check,
+then act**. No component may silently take over another component's job.
+
 Copy the prompt below into an AI system when asking it to review this repository or a downloaded
 Constellation replay bundle. It is intentionally adversarial: it does not ask the reviewer to
 praise the project or predict a hackathon result.
@@ -37,6 +53,15 @@ Trace this exact boundary through code and tests:
 - The application preserves the assurance/certainty returned by Cortex without promotion.
 - The independent verifier does not import or call the HexStellar client.
 - Only a currently verified input/plan digest may mutate the sandbox.
+
+Confirm that the judge-facing links identify the intended public surfaces:
+
+- Cortex documentation: `https://docs.hexstellar.com/`
+- worked examples: `https://docs.hexstellar.com/examples/`
+- public HexStellar CLI/client: `https://github.com/brayonpi/hexstellar`
+
+Do not confuse the public CLI/client with the proprietary Cortex engine, and do not expect engine
+source code in this repository.
 
 Pay special attention to points a shallow review may miss:
 

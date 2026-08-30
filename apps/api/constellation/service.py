@@ -119,7 +119,7 @@ class MissionService:
             self._audit(
                 mission,
                 "artifacts.materialized",
-                "Replay bundle and inspectable evidence artifacts were materialized",
+                "Replay ZIP and inspection files are ready",
                 component="artifact-store",
                 status="completed",
                 artifact_refs=[artifact.name for artifact in mission.artifacts],
@@ -129,7 +129,7 @@ class MissionService:
             self._audit(
                 mission,
                 "artifacts.failed",
-                "Mission result is preserved, but artifact materialization failed",
+                "Mission result was kept, but the evidence files could not be created",
                 component="artifact-store",
                 status="failed",
                 error=str(exc),
@@ -154,7 +154,7 @@ class MissionService:
         self._audit(
             mission,
             "mission.created",
-            "Nominal simulated mission loaded",
+            "Starting simulated schedule loaded",
             status="completed",
             output_digest=mission.snapshot.sha256,
             fixture=request.fixture,
@@ -168,7 +168,12 @@ class MissionService:
             return mission
         mission.status = MissionStatus.INTERPRETING
         mission.operator_text = request.text
-        self._audit(mission, "interpretation.started", "Gemini mission interpretation started", status="started")
+        self._audit(
+            mission,
+            "interpretation.started",
+            "Gemini is turning the request into testable rules",
+            status="started",
+        )
         self._save(mission)
         started = time.perf_counter()
         try:
@@ -178,7 +183,7 @@ class MissionService:
             self._audit(
                 mission,
                 "interpretation.failed",
-                "Mission interpretation failed closed",
+                "The request could not be safely turned into rules; the run stopped",
                 component="gemini-adk",
                 status="failed",
                 duration_ms=round((time.perf_counter() - started) * 1000),
@@ -194,7 +199,7 @@ class MissionService:
         self._audit(
             mission,
             "intent.canonicalized",
-            "Mission intent compiled into a canonical model",
+            "Gemini output normalized and frozen as testable rules",
             component="gemini-adk",
             status="completed",
             duration_ms=mission.intent.duration_ms,
@@ -206,7 +211,7 @@ class MissionService:
             self._audit(
                 mission,
                 "clarification.required",
-                "Objective priority changes the feasible recovery policy",
+                "One priority choice changes which recovery plan wins",
                 status="started",
                 ambiguity="urgent_deadline_vs_noncritical_downlinks",
             )
@@ -221,7 +226,7 @@ class MissionService:
         self._audit(
             mission,
             "telemetry.accepted",
-            "Telemetry event accepted and deduplicated",
+            "Failure event accepted; duplicates will not start extra work",
             component="event-ingress",
             status="completed",
             input_digest=sha256_digest(event),
@@ -242,7 +247,7 @@ class MissionService:
         self._audit(
             mission,
             "clarification.accepted",
-            "Objective order updated from explicit operator choice",
+            "Operator choice updated the plan priorities",
             component="gemini-adk",
             status="completed",
             output_digest=mission.intent.canonical_digest,
@@ -266,11 +271,26 @@ class MissionService:
         if mission.status not in retryable or not mission.intent:
             raise InvalidTransition("mission must have resolved intent before planning")
 
+        if mission.intent.objective_order[1:2] == ["noncritical_downlinks"]:
+            mission.status = MissionStatus.CONTRACT_REJECTED
+            self._audit(
+                mission,
+                "contract.unsupported_priority",
+                (
+                    "The lower-priority-download choice was honored, but this golden scenario cannot "
+                    "prove that every previously computed output is available; search and action stopped"
+                ),
+                component="mission-coordinator",
+                status="failed",
+                unsupported_constraint="preserve_all_noncritical_downlinks",
+            )
+            return self._save(mission)
+
         mission.status = MissionStatus.GENERATING_BUNDLES
         self._audit(
             mission,
             "resources.quarantined",
-            "Failed resources and transitive dependencies were excluded",
+            "Failed resources and anything that depends on them were removed",
             component="mission-kernel",
             status="completed",
         )
@@ -279,7 +299,7 @@ class MissionService:
         self._audit(
             mission,
             "bundles.generated",
-            "Deterministic locally valid candidate bundles generated",
+            "Pre-checked schedule pieces created deterministically",
             component="mission-kernel",
             status="completed",
             output_digest=sha256_digest(mission.bundles),
@@ -292,7 +312,7 @@ class MissionService:
         self._audit(
             mission,
             "cortex.cover.submitted",
-            "Coverage contract submitted to HexStellar Cortex"
+            "Complete-plan search sent to HexStellar Cortex"
             if self.settings.live_cortex_available
             else "Live Cortex is not configured; bounded local execution is explicitly selected",
             component="cortex-adapter",
@@ -376,7 +396,7 @@ class MissionService:
         self._audit(
             mission,
             "cortex.cover.received",
-            "Coverage candidate received and contract fields recomputed",
+            "Cortex returned a candidate; its contract fields were checked again",
             component="cortex-adapter",
             status="completed",
             output_digest=sha256_digest(selected_indices),
@@ -427,7 +447,7 @@ class MissionService:
                 self._audit(
                     mission,
                     "topology.refinement_rejected",
-                    "Coverage plan retained because live topology refinement was unavailable",
+                    "Valid schedule kept because optional compute placement was unavailable",
                     component="cortex-adapter",
                     status="failed",
                     error=str(exc),
@@ -439,7 +459,7 @@ class MissionService:
             self._audit(
                 mission,
                 "topology.refinement_rejected",
-                "Coverage plan retained because optional topology refinement was rejected",
+                "Valid schedule kept because optional compute placement was rejected",
                 component="cortex-adapter",
                 status="failed",
                 error=str(exc),
@@ -448,9 +468,9 @@ class MissionService:
         self._audit(
             mission,
             "topology.refined" if qap_answer else "topology.refinement_rejected",
-            "Compute placement candidate recomputed independently"
+            "Optional compute placement cost checked independently"
             if qap_answer
-            else "Coverage plan retained without topology refinement",
+            else "Valid schedule kept without optional compute placement",
             component="cortex-adapter",
             status="completed" if qap_answer else "info",
             output_digest=sha256_digest(qap_answer) if qap_answer else None,
@@ -478,7 +498,7 @@ class MissionService:
             self._audit(
                 mission,
                 "mission.impossible",
-                "No candidate covered every required obligation; sandbox mutation is blocked",
+                "No available combination completed every required task; sandbox update blocked",
                 status="failed",
                 uncovered=uncovered,
             )
@@ -489,7 +509,7 @@ class MissionService:
         self._audit(
             mission,
             "verification.started",
-            "Independent mission replay started",
+            "Separate minute-by-minute plan check started",
             component="independent-verifier",
             status="started",
         )
@@ -507,7 +527,7 @@ class MissionService:
             self._audit(
                 mission,
                 "verification.passed",
-                "All declared simulation-domain checks passed",
+                "Every declared scheduling and resource rule passed",
                 component="independent-verifier",
                 status="completed",
                 output_digest=report.plan_digest,
@@ -518,7 +538,7 @@ class MissionService:
             self._audit(
                 mission,
                 "verification.failed",
-                "Independent replay found a counterexample; sandbox mutation is blocked",
+                "The separate checker found an exact failure; sandbox update blocked",
                 component="independent-verifier",
                 status="failed",
                 issues=[issue.model_dump(mode="json") for issue in report.issues],
@@ -563,9 +583,9 @@ class MissionService:
         self._audit(
             mission,
             "planning.requeued" if is_retry else "planning.queued",
-            "Durable authenticated worker retry task created"
+            "Cloud Tasks scheduled a safe worker retry"
             if is_retry
-            else "Durable authenticated worker task created",
+            else "Cloud Tasks scheduled the recovery worker",
             component="cloud-tasks",
             status="completed",
             task_name=task_name,
@@ -611,7 +631,7 @@ class MissionService:
             self._audit(
                 mission,
                 "sandbox.apply_conflict",
-                "Verified digest no longer matches the current mission model",
+                "The mission changed after it was checked; sandbox update blocked",
                 status="failed",
             )
             self._save(mission)
@@ -622,7 +642,7 @@ class MissionService:
         self._audit(
             mission,
             "sandbox.updated",
-            "Verified plan applied to the simulated mission state",
+            "Checked plan applied to the simulated mission state",
             component="sandbox-mutation",
             status="completed",
             output_digest=report.plan_digest,

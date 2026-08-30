@@ -1,5 +1,14 @@
 # Claims and limitations
 
+## Plain-English boundary
+
+Constellation establishes one narrow result: **this exact simulated recovery schedule passed the
+software rules implemented by the independent checker for this exact fingerprinted input**.
+
+It does not establish that a real satellite is safe, that every possible plan was examined, that the
+operator's language is universally understood, or that one system is universally faster or more
+efficient than another. “Verified” is a concrete software result, not a general seal of truth.
+
 ## What the committed evidence can establish
 
 For the committed deterministic simulation, Constellation can establish that:

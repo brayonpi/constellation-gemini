@@ -2,41 +2,62 @@
 
 ## 0:00–0:25 — The friction
 
-Show the nominal globe.
+Show the network before the failure.
 
-> Future orbital AI infrastructure must reconcile compute, communication, energy, storage, ground contact, and failures. A language model can describe a schedule. That does not establish that the schedule is admissible.
+> An AI can write a schedule that sounds right and still use a dead computer, double-book a station,
+> or finish an urgent job too late. Constellation refuses to act until a separate program checks every
+> minute of the proposed recovery.
 
 ## 0:25–0:50 — Autonomous event
 
 Publish the committed compound failure through Pub/Sub.
 Show the Pub/Sub message ID and private Cloud Run worker log correlation ID.
 
+> One station is down. Two orbital computers are isolated. An urgent job just arrived. Nobody clicked
+> a hidden “solve” button: the real event started the recovery.
+
 ## 0:50–1:20 — Gemini and the material clarification
 
-Show the real `gemini-3.5-flash` model record, extracted constraints, and canonical digest.
+Show the real `gemini-3.5-flash` model record, extracted rules, and request fingerprint.
 Answer the single priority question.
 Show that the state machine resumes without further guidance.
 
+> Gemini's job is understanding, not approval. This question matters because the answer changes which
+> recovery plan wins. We freeze the confirmed meaning into a fingerprint before searching.
+
 ## 1:20–2:00 — Combinatorial search
 
-Show the number of candidate bundles and subset space.
+Show the number of candidate schedule pieces and combination space.
 Open the integer-indexed `cover` contract, then the returned Cortex receipt and unchanged certainty.
-Show the QAP placement and independently recomputed cost.
+Show the optional QAP compute placement and independently recomputed cost.
+
+> Cortex compares complete combinations under the frozen rules. It is searching the formal scheduling
+> problem, not writing a persuasive paragraph. This timing is telemetry for this run, not a benchmark.
 
 ## 2:00–2:40 — Adversarial replay
 
-Show all verifier check families passing.
-Load a tampered QAP cost or overlapping contact and show the concrete counterexample.
-State that this proves only the declared simulation invariants, not physical spacecraft safety.
+Show all independent checker categories passing.
+Load an overlapping contact and show the exact two reservations that collide.
+
+> Now a separate Python program tries to reject the plan. It catches this overlap and keeps the action
+> locked. The valid plan passes every declared software rule. That is the full claim: it does not prove
+> physical spacecraft safety or global optimality.
 
 ## 2:40–3:10 — Action
 
 Apply the verified plan to the sandbox.
-Show the nominal/recovered/diff views, mission patch, Firestore state, and downloadable replay.
+Show the Before failure, New plan, and What changed views, mission patch, Firestore state, and replay ZIP.
+
+> Only the exact checked fingerprint can update this sandbox. A judge can download the inputs, receipts,
+> log, checksums, and checker result, then rerun the check without Gemini or Cortex.
 
 ## 3:10–3:40 — Architecture
 
 Show `docs/architecture.svg` and identify Gemini, ADK, Pub/Sub, Cloud Tasks, Cloud Run, Firestore, Cortex, and the verifier trust boundary.
+
+Open the public Cortex documentation button and briefly show the public HexStellar CLI/client link.
+
+> Three jobs, three boundaries: understand, search, check. No system grades its own homework.
 
 ## 3:40–4:00 — Proof and brand
 

@@ -99,6 +99,30 @@ async def test_impossible_mission_reports_uncovered_and_never_applies(
         mission_service.apply(mission.id)
 
 
+@pytest.mark.asyncio
+async def test_alternative_priority_changes_contract_and_fails_closed_when_not_representable(
+    mission_service: MissionService,
+) -> None:
+    mission = mission_service.create(CreateMissionRequest(idempotency_key="create-alternative-0001"))
+    mission = await mission_service.set_intent(
+        mission.id,
+        IntentRequest(text=DEFAULT_OPERATOR_TEXT, idempotency_key="intent-alternative-0001"),
+    )
+    mission = await mission_service.clarify(
+        mission.id,
+        ClarificationRequest(answer="noncritical_downlinks", idempotency_key="clarify-alternative-0001"),
+    )
+    assert mission.intent
+    assert mission.intent.objective_order[1] == "noncritical_downlinks"
+    mission = await mission_service.plan(mission.id, "plan-alternative-0001")
+    assert mission.status == "contract_rejected"
+    assert mission.plan is None
+    assert mission.bundles == []
+    assert mission.audit[-1].type == "contract.unsupported_priority"
+    with pytest.raises(InvalidTransition):
+        mission_service.apply(mission.id)
+
+
 def test_duplicate_telemetry_is_idempotent(mission_service: MissionService) -> None:
     mission = mission_service.create(CreateMissionRequest(idempotency_key="create-dedupe-0001"))
     event = TelemetryEvent(
