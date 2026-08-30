@@ -1,54 +1,104 @@
-import type { Mission } from '../types'
+import { useMemo, useState } from 'react'
+import type { CSSProperties } from 'react'
+import { BatteryCharging, Database, RadioTower } from 'lucide-react'
+import type { Action, Mission, MissionView } from '../types'
 
-const colors: Record<string, string> = {
-  compute: '#2f6df4',
-  downlink: '#7558e8',
-  health: '#1ba97f',
-  transfer: '#e7a42b',
+const colors: Record<Action['kind'], string> = {
+  compute: '#5b8cff',
+  downlink: '#a584ff',
+  health: '#53d6a5',
+  transfer: '#f6b957',
 }
 
-export function Timeline({ mission }: { mission?: Mission }) {
+type TimelineAction = Action & { source: 'nominal' | 'recovered' }
+
+export function Timeline({ mission, view }: { mission?: Mission; view: MissionView }) {
+  const [focused, setFocused] = useState<TimelineAction>()
   const selected = new Set(mission?.plan?.selected_bundle_ids ?? [])
-  const actions = mission?.bundles.filter((bundle) => selected.has(bundle.id)).flatMap((bundle) => bundle.actions) ?? []
-  const fallback = mission?.snapshot.existing_schedule ?? []
-  const shown = actions.length ? actions : fallback
+  const nominal: TimelineAction[] = (mission?.snapshot.existing_schedule ?? []).map((action) => ({
+    ...action, source: 'nominal',
+  }))
+  const recovered: TimelineAction[] = (
+    mission?.bundles.filter((bundle) => selected.has(bundle.id)).flatMap((bundle) => bundle.actions) ?? []
+  ).map((action) => ({ ...action, source: 'recovered' }))
+  const shown = view === 'nominal' || view === 'incident'
+    ? nominal
+    : view === 'diff'
+      ? [...nominal, ...recovered]
+      : recovered.length ? recovered : nominal
   const horizon = mission?.snapshot.horizon_minutes ?? 180
-  const rows = Array.from(new Set(shown.map((action) => action.satellite_id))).sort()
+  const ticks = useMemo(() => Array.from({ length: 5 }, (_, index) => Math.round((horizon / 4) * index)), [horizon])
+  const satelliteRows = Array.from(new Set(shown.map((action) => action.satellite_id))).sort()
+  const stationRows = Array.from(new Set(shown.flatMap((action) => action.station_id ? [action.station_id] : []))).sort()
+  const rows = [
+    ...satelliteRows.map((id) => ({ id, label: id, type: 'satellite' as const })),
+    ...stationRows.map((id) => ({ id: `station:${id}`, label: id, type: 'station' as const })),
+  ]
+  const rowActions = (row: (typeof rows)[number]) => shown.filter((action) => (
+    row.type === 'satellite' ? action.satellite_id === row.id : action.station_id === row.label
+  ))
+  const selectedBundles = mission?.bundles.filter((bundle) => selected.has(bundle.id)) ?? []
+  const finalEnergy = selectedBundles.length
+    ? Math.min(...selectedBundles.map((bundle) => bundle.energy_trajectory.at(-1) ?? 0))
+    : undefined
+  const peakStorage = selectedBundles.length
+    ? Math.max(...selectedBundles.flatMap((bundle) => bundle.storage_trajectory))
+    : undefined
 
   return (
-    <section className="panel timeline-panel">
-      <div className="panel-heading">
+    <section className="panel timeline-panel" aria-labelledby="timeline-title">
+      <div className="panel-heading timeline-heading">
         <div>
-          <span className="eyebrow">Mission timeline</span>
-          <h2>{actions.length ? 'Recovered schedule' : 'Nominal schedule'}</h2>
+          <span className="eyebrow">Mission timeline · {view}</span>
+          <h2 id="timeline-title">{view === 'diff' ? 'Nominal ↔ recovered schedule' : `${view} schedule`}</h2>
         </div>
-        <div className="legend">
-          {Object.entries(colors).slice(0, 3).map(([kind, color]) => <span key={kind}><i style={{ background: color }} />{kind}</span>)}
+        <div className="timeline-metrics" aria-label="Selected plan resource summary">
+          <span><BatteryCharging size={13} /> Energy floor <strong>{finalEnergy ?? '—'}</strong></span>
+          <span><Database size={13} /> Peak storage <strong>{peakStorage ?? '—'}</strong></span>
+          <span><RadioTower size={13} /> Stations <strong>{stationRows.length}</strong></span>
         </div>
       </div>
-      <div className="timeline-scale"><span>00:00</span><span>+60m</span><span>+120m</span><span>+180m</span></div>
+      <div className="timeline-legend">
+        {(Object.entries(colors) as Array<[Action['kind'], string]>).map(([kind, color]) => (
+          <span key={kind}><i style={{ background: color }} />{kind}</span>
+        ))}
+        {view === 'diff' && <>
+          <span><i className="outline-key" />nominal</span><span><i className="solid-key" />recovered</span>
+        </>}
+      </div>
+      <div className="timeline-scale" style={{ marginLeft: 116 }}>
+        {ticks.map((tick) => <span key={tick}>+{tick}m</span>)}
+      </div>
       <div className="timeline-grid">
-        {rows.length === 0 && <div className="timeline-empty">Launch the mission to construct a schedule.</div>}
+        {rows.length === 0 && <div className="timeline-empty">Launch the mission to construct the schedule.</div>}
         {rows.map((row) => (
-          <div className="timeline-row" key={row}>
-            <strong>{row}</strong>
+          <div className="timeline-row" key={row.id}>
+            <strong>{row.label}<small>{row.type}</small></strong>
             <div className="timeline-track">
-              {shown.filter((action) => action.satellite_id === row).map((action) => (
-                <div
-                  className="timeline-action"
-                  key={action.id}
-                  title={`${action.kind}: ${action.interval.start}–${action.interval.end} min`}
+              {rowActions(row).map((action) => (
+                <button
+                  className={`timeline-action source-${action.source}`}
+                  key={`${action.source}-${action.id}-${row.id}`}
+                  aria-label={`${action.kind} on ${row.label}, minute ${action.interval.start} to ${action.interval.end}`}
+                  onClick={() => setFocused(action)}
                   style={{
                     left: `${(action.interval.start / horizon) * 100}%`,
-                    width: `${Math.max(2.6, ((action.interval.end - action.interval.start) / horizon) * 100)}%`,
-                    background: colors[action.kind],
-                  }}
-                ><span>{action.kind[0].toUpperCase()}</span></div>
+                    width: `${Math.max(2.4, ((action.interval.end - action.interval.start) / horizon) * 100)}%`,
+                    '--action-color': colors[action.kind],
+                  } as CSSProperties}
+                ><span>{action.kind.slice(0, 1).toUpperCase()}</span></button>
               ))}
             </div>
           </div>
         ))}
       </div>
+      {focused && <div className="timeline-inspector" role="status">
+        <div><span>Action</span><strong>{focused.id}</strong></div>
+        <div><span>Interval</span><strong>{focused.interval.start}–{focused.interval.end} min</strong></div>
+        <div><span>Resource</span><strong>{focused.station_id ?? focused.satellite_id}</strong></div>
+        <div><span>Trajectory</span><strong>{focused.energy_delta} energy · {focused.storage_delta} MB</strong></div>
+        <button onClick={() => setFocused(undefined)}>Close</button>
+      </div>}
     </section>
   )
 }

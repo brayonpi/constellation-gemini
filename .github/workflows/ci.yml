@@ -20,6 +20,8 @@ jobs:
       - run: python -m pip install -e '.[dev]'
       - run: python -m ruff check apps tests scripts
       - run: python -m pytest --cov=constellation --cov-report=term-missing
+      - run: python -m coverage report --fail-under=90
+      - run: python -m pip_audit
       - run: PYTHONPATH=apps/api python -m constellation.cli verify data/fixtures/recovered-plan.json
 
   frontend:
@@ -39,6 +41,24 @@ jobs:
       - run: npm run test
       - run: npm run lint
       - run: npm run build
+      - run: npm audit --omit=dev
+
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive
+      - run: terraform -chdir=infra/terraform init -backend=false
+      - run: terraform -chdir=infra/terraform validate
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
 
   container:
     runs-on: ubuntu-latest
@@ -50,4 +70,12 @@ jobs:
         with:
           context: .
           push: false
+          load: true
           tags: constellation:ci
+      - uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: constellation:ci
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH

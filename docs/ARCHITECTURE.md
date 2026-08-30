@@ -17,13 +17,20 @@ The agent interprets intent and selects from authorized tools; it does not direc
 
 ```text
 created
-  -> awaiting_clarification -> ready
-  -> planning -> verifying
-  -> verified -> applied
-              \-> rejected
-  -> impossible
-  -> failed
+  -> interpreting
+  -> awaiting_clarification
+  -> ready
+  -> planning
+  -> generating_bundles
+  -> cortex_cover
+  -> cortex_qap
+  -> verifying
+  -> verified
+  -> applied
 ```
+
+Typed terminal states include `interpretation_failed`, `contract_rejected`, `cortex_unavailable`, `impossible`, `verification_failed`, and `apply_conflict`.
+An unavailable live Cortex request stops the run; deterministic local execution occurs only when the environment was declared local before the solve.
 
 Each transition appends a structured audit event.
 Mutation requests and telemetry events are idempotent.
@@ -38,3 +45,8 @@ Mutation requests and telemetry events are idempotent.
 - Cloud Storage: immutable replay artifacts.
 - Secret Manager: HexStellar and service credentials.
 - Cloud Logging: correlation-scoped operational evidence with secrets redacted.
+
+The public web identity has no Vertex AI or Secret Manager permission.
+The worker owns live model and Cortex calls, while the task and Pub/Sub identities receive only Cloud Run invocation rights.
+
+> **BRAYON PIESKE** — *"Engineering earns trust when every claim is testable and every release is verified."*

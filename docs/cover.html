@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1200, initial-scale=1">
+  <title>Constellation cover</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 1200px; height: 675px; overflow: hidden; }
+    body { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #111c35; }
+    .cover { position: relative; width: 1200px; height: 675px; overflow: hidden; background: #f6f8fc; }
+    .background { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .wash { position: absolute; inset: 0; background: linear-gradient(90deg,rgba(249,247,242,.99) 0%,rgba(249,248,245,.96) 39%,rgba(249,249,249,.34) 66%,rgba(8,27,62,.08)); }
+    .content { position: absolute; inset: 0; padding: 70px 70px 62px; display: flex; flex-direction: column; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 13px; font-size: 12px; font-weight: 800; letter-spacing: .22em; }
+    .mark { width: 31px; height: 31px; border: 1.5px solid #4f77df; border-radius: 50%; position: relative; }
+    .mark::before,.mark::after { content:""; position:absolute; inset:5px -4px; border:1px solid #4f77df; border-radius:50%; transform:rotate(52deg); }
+    .mark::after { transform:rotate(-52deg); }
+    .eyebrow { display: inline-flex; width: max-content; border: 1px solid rgba(35,57,102,.16); border-radius: 999px; padding: 9px 14px; font: 700 9px ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .16em; color: #496083; background: rgba(255,255,255,.55); }
+    h1 { margin: 22px 0 18px; max-width: 650px; font-size: 75px; line-height: .94; letter-spacing: -.065em; }
+    h1 span { color: #446fe6; }
+    .dek { width: 580px; margin: 0; color: #52617b; font-size: 19px; line-height: 1.55; }
+    .receipt { position: absolute; right: 58px; bottom: 55px; width: 355px; border-radius: 20px; padding: 22px; color: #eef7ff; background: rgba(8,24,53,.88); border: 1px solid rgba(167,205,255,.28); box-shadow: 0 26px 70px rgba(4,18,42,.32); backdrop-filter: blur(14px); }
+    .receipt-head { display: flex; justify-content: space-between; font: 700 9px ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .14em; color: #9cb5dc; }
+    .verified { color: #76e4bd; }
+    .digest { display:block; margin: 20px 0 15px; font: 600 11px ui-monospace,SFMono-Regular,Menlo,monospace; color: #d8e5f8; }
+    .checks { display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:11px; color:#b8c9e3; }
+    .checks span::before { content:"✓"; color:#76e4bd; margin-right:7px; }
+    .footer { display:flex; gap:10px; align-items:center; font:700 9px ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.11em; color:#65728a; }
+    .footer i { width:3px; height:3px; border-radius:50%; background:#6c84bd; }
+  </style>
+</head>
+<body>
+  <main class="cover" aria-label="Constellation editorial cover">
+    <img class="background" src="assets/constellation-cover-background.png" alt="">
+    <div class="wash"></div>
+    <div class="content">
+      <div class="brand"><span class="mark"></span>CONSTELLATION</div>
+      <div>
+        <div class="eyebrow">PROOF-CARRYING MISSION CONTROL</div>
+        <h1>Say the mission.<br><span>Prove the plan.</span></h1>
+        <p class="dek">Gemini interprets intent. HexStellar Cortex searches the formal contract. Independent replay decides whether the sandbox may change.</p>
+      </div>
+      <div class="footer"><span>SIMULATED ORBITAL AI MISSION</span><i></i><span>INSPECTABLE EVIDENCE</span><i></i><span>NETWORK-FREE REPLAY</span></div>
+    </div>
+    <aside class="receipt">
+      <div class="receipt-head"><span>ADMISSION RECEIPT</span><span class="verified">VERIFIED</span></div>
+      <code class="digest">sha256 · a4a8e6df7d101955…a65996b</code>
+      <div class="checks"><span>coverage</span><span>temporal</span><span>resources</span><span>quarantine</span><span>deadlines</span><span>provenance</span></div>
+    </aside>
+  </main>
+</body>
+</html>

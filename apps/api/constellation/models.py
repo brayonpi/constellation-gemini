@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any, Literal
+from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -124,6 +125,10 @@ class MissionIntent(StrictModel):
     canonical_digest: str
     gemini_model_id: str
     live_interpretation: bool
+    interaction_id: str | None = None
+    duration_ms: int | None = Field(None, ge=0)
+    usage_metadata: dict[str, Any] = Field(default_factory=dict)
+    fallback_reason: str | None = None
 
 
 class TelemetryEvent(StrictModel):
@@ -174,6 +179,11 @@ class CortexReceipt(StrictModel):
     receipt: dict[str, Any]
     seed: int | None = None
     effort: str | None = None
+    command: Literal["cover", "qap"] | None = None
+    request_digest: str | None = None
+    response_digest: str | None = None
+    latency_ms: int | None = Field(None, ge=0)
+    retry_count: int = Field(0, ge=0)
 
 
 class VerificationIssue(StrictModel):
@@ -211,23 +221,61 @@ class MissionPlan(StrictModel):
 
 class MissionStatus(StrEnum):
     CREATED = "created"
+    INTERPRETING = "interpreting"
     AWAITING_CLARIFICATION = "awaiting_clarification"
+    CANONICALIZED = "canonicalized"
     READY = "ready"
     PLANNING = "planning"
+    GENERATING_BUNDLES = "generating_bundles"
+    CORTEX_COVER = "cortex_cover"
+    CORTEX_QAP = "cortex_qap"
     VERIFYING = "verifying"
     VERIFIED = "verified"
     IMPOSSIBLE = "impossible"
     REJECTED = "rejected"
     APPLIED = "applied"
     FAILED = "failed"
+    INTERPRETATION_FAILED = "interpretation_failed"
+    CONTRACT_REJECTED = "contract_rejected"
+    CORTEX_UNAVAILABLE = "cortex_unavailable"
+    VERIFICATION_FAILED = "verification_failed"
+    APPLY_CONFLICT = "apply_conflict"
+
+
+class ExecutionMode(StrEnum):
+    LIVE = "live"
+    LOCAL_DETERMINISTIC = "local_deterministic"
+    OFFLINE_PRECOMPUTED = "offline_precomputed"
+    DEGRADED_FIXTURE = "degraded_fixture"
 
 
 class AuditEvent(StrictModel):
     sequence: int
+    event_id: str = Field(default_factory=lambda: str(uuid4()))
     type: str
     message: str
     at: datetime = Field(default_factory=utc_now)
+    mission_id: str | None = None
+    run_id: str | None = None
+    correlation_id: str | None = None
+    component: str = "mission-coordinator"
+    status: Literal["started", "completed", "failed", "info"] = "info"
+    duration_ms: int | None = Field(None, ge=0)
+    input_digest: str | None = None
+    output_digest: str | None = None
+    artifact_refs: list[str] = Field(default_factory=list)
+    retry_count: int = Field(0, ge=0)
+    certainty: str | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class ArtifactManifest(StrictModel):
+    name: str
+    content_type: str
+    size: int = Field(ge=0)
+    sha256: str
+    provenance: str
+    storage_uri: str
 
 
 class MissionRecord(StrictModel):
@@ -241,6 +289,12 @@ class MissionRecord(StrictModel):
     bundles: list[CandidateBundle] = Field(default_factory=list)
     plan: MissionPlan | None = None
     audit: list[AuditEvent] = Field(default_factory=list)
+    artifacts: list[ArtifactManifest] = Field(default_factory=list)
+    version: int = Field(0, ge=0)
+    run_id: str = Field(default_factory=lambda: str(uuid4()))
+    correlation_id: str = Field(default_factory=lambda: str(uuid4()))
+    execution_mode: ExecutionMode = ExecutionMode.LOCAL_DETERMINISTIC
+    applied_plan_digest: str | None = None
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
 

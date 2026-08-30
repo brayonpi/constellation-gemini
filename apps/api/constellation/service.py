@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import time
 import uuid
 from typing import Any
 
 from .agent import interpret_intent
+from .artifacts import build_mission_artifacts
 from .bundles import (
     cover_contract,
     deterministic_cover,
@@ -12,7 +14,7 @@ from .bundles import (
     qap_contract,
 )
 from .config import Settings
-from .cortex import CortexClient, CortexUnavailable
+from .cortex import CortexClient, CortexContractRejected, CortexError, CortexUnavailable
 from .digests import sha256_digest
 from .fixtures import load_snapshot
 from .models import (
@@ -21,13 +23,20 @@ from .models import (
     CortexReceipt,
     CostComponents,
     CreateMissionRequest,
+    ExecutionMode,
     IntentRequest,
     MissionPlan,
     MissionRecord,
     MissionStatus,
     TelemetryEvent,
 )
-from .store import FirestoreMissionStore, MissionStore
+from .store import (
+    ConcurrentUpdate,
+    FirestoreMissionStore,
+    IdempotencyConflict,
+    MissionStore,
+    StoreProtocol,
+)
 from .verifier import qap_cost, verify_mission
 
 
@@ -40,12 +49,14 @@ class InvalidTransition(RuntimeError):
 
 
 class MissionService:
+    """Central, auditable state machine for the committed mission scenario."""
+
     def __init__(self, settings: Settings):
         self.settings = settings
         if settings.mode == "cloud":
             if not settings.google_cloud_project:
                 raise RuntimeError("GOOGLE_CLOUD_PROJECT is required in cloud mode")
-            self.store = FirestoreMissionStore(settings.google_cloud_project)
+            self.store: StoreProtocol = FirestoreMissionStore(settings.google_cloud_project)
         else:
             self.store = MissionStore(settings.database_path)
         self.cortex = CortexClient(settings)
@@ -56,15 +67,80 @@ class MissionService:
             raise MissionNotFound(mission_id)
         return mission
 
+    def _save(self, mission: MissionRecord) -> MissionRecord:
+        return self.store.put(mission, expected_version=mission.version)
+
     @staticmethod
-    def _audit(mission: MissionRecord, event_type: str, message: str, **metadata: Any) -> None:
+    def _audit(
+        mission: MissionRecord,
+        event_type: str,
+        message: str,
+        *,
+        component: str = "mission-coordinator",
+        status: str = "info",
+        duration_ms: int | None = None,
+        input_digest: str | None = None,
+        output_digest: str | None = None,
+        retry_count: int = 0,
+        certainty: str | None = None,
+        artifact_refs: list[str] | None = None,
+        **metadata: Any,
+    ) -> None:
         mission.audit.append(
-            AuditEvent(sequence=len(mission.audit) + 1, type=event_type, message=message, metadata=metadata)
+            AuditEvent(
+                sequence=len(mission.audit) + 1,
+                type=event_type,
+                message=message,
+                mission_id=mission.id,
+                run_id=mission.run_id,
+                correlation_id=mission.correlation_id,
+                component=component,
+                status=status,  # type: ignore[arg-type]
+                duration_ms=duration_ms,
+                input_digest=input_digest,
+                output_digest=output_digest,
+                retry_count=retry_count,
+                certainty=certainty,
+                artifact_refs=artifact_refs or [],
+                metadata=metadata,
+            )
         )
+
+    def _claim(self, mission: MissionRecord, operation: str, key: str, payload: Any) -> None:
+        claimed = self.store.claim_idempotency(
+            f"{operation}:{mission.id}", key, mission.id, sha256_digest(payload)
+        )
+        if claimed != mission.id:
+            raise IdempotencyConflict("idempotency key belongs to another mission")
+
+    def _materialize_artifacts(self, mission: MissionRecord) -> None:
+        try:
+            mission.artifacts = build_mission_artifacts(self.settings, mission)
+            self._audit(
+                mission,
+                "artifacts.materialized",
+                "Replay bundle and inspectable evidence artifacts were materialized",
+                component="artifact-store",
+                status="completed",
+                artifact_refs=[artifact.name for artifact in mission.artifacts],
+                count=len(mission.artifacts),
+            )
+        except RuntimeError as exc:
+            self._audit(
+                mission,
+                "artifacts.failed",
+                "Mission result is preserved, but artifact materialization failed",
+                component="artifact-store",
+                status="failed",
+                error=str(exc),
+            )
 
     def create(self, request: CreateMissionRequest) -> MissionRecord:
         candidate_id = str(uuid.uuid4())
-        mission_id = self.store.claim_idempotency("create", request.idempotency_key, candidate_id)
+        request_payload = request.model_dump(mode="json", exclude={"idempotency_key"})
+        mission_id = self.store.claim_idempotency(
+            "create", request.idempotency_key, candidate_id, sha256_digest(request_payload)
+        )
         existing = self.store.get(mission_id)
         if existing:
             return existing
@@ -73,43 +149,72 @@ class MissionService:
             name=request.name,
             status=MissionStatus.CREATED,
             snapshot=load_snapshot(request.fixture),
+            execution_mode=(ExecutionMode.LIVE if self.settings.mode == "cloud" else ExecutionMode.LOCAL_DETERMINISTIC),
         )
-        self._audit(mission, "mission.created", "Nominal simulated mission loaded", fixture=request.fixture)
-        return self.store.put(mission)
+        self._audit(
+            mission,
+            "mission.created",
+            "Nominal simulated mission loaded",
+            status="completed",
+            output_digest=mission.snapshot.sha256,
+            fixture=request.fixture,
+        )
+        return self.store.put(mission, expected_version=0)
 
     async def set_intent(self, mission_id: str, request: IntentRequest) -> MissionRecord:
         mission = self._get(mission_id)
-        operation = f"intent:{mission_id}"
-        claimed = self.store.claim_idempotency(operation, request.idempotency_key, mission_id)
-        if claimed != mission_id:
-            raise InvalidTransition("idempotency key belongs to another mission")
+        self._claim(mission, "intent", request.idempotency_key, {"text": request.text})
         if mission.intent and mission.operator_text == request.text:
             return mission
+        mission.status = MissionStatus.INTERPRETING
         mission.operator_text = request.text
-        mission.intent = await interpret_intent(self.settings, request.text)
+        self._audit(mission, "interpretation.started", "Gemini mission interpretation started", status="started")
+        self._save(mission)
+        started = time.perf_counter()
+        try:
+            mission.intent = await interpret_intent(self.settings, request.text)
+        except Exception as exc:
+            mission.status = MissionStatus.INTERPRETATION_FAILED
+            self._audit(
+                mission,
+                "interpretation.failed",
+                "Mission interpretation failed closed",
+                component="gemini-adk",
+                status="failed",
+                duration_ms=round((time.perf_counter() - started) * 1000),
+                error_type=type(exc).__name__,
+            )
+            self._save(mission)
+            raise InvalidTransition("mission interpretation failed closed") from exc
         mission.status = (
             MissionStatus.AWAITING_CLARIFICATION if mission.intent.unresolved_ambiguities else MissionStatus.READY
         )
+        if not mission.intent.live_interpretation:
+            mission.execution_mode = ExecutionMode.DEGRADED_FIXTURE
         self._audit(
             mission,
             "intent.canonicalized",
             "Mission intent compiled into a canonical model",
-            digest=mission.intent.canonical_digest,
+            component="gemini-adk",
+            status="completed",
+            duration_ms=mission.intent.duration_ms,
+            output_digest=mission.intent.canonical_digest,
             live=mission.intent.live_interpretation,
+            fallback_reason=mission.intent.fallback_reason,
         )
         if mission.status == MissionStatus.AWAITING_CLARIFICATION:
             self._audit(
                 mission,
                 "clarification.required",
                 "Objective priority changes the feasible recovery policy",
+                status="started",
                 ambiguity="urgent_deadline_vs_noncritical_downlinks",
             )
-        return self.store.put(mission)
+        return self._save(mission)
 
     def add_event(self, mission_id: str, event: TelemetryEvent, idempotency_key: str) -> MissionRecord:
         mission = self._get(mission_id)
-        operation = f"event:{mission_id}"
-        self.store.claim_idempotency(operation, idempotency_key, mission_id)
+        self._claim(mission, "event", idempotency_key, event.model_dump(mode="json"))
         if any(existing.event_id == event.event_id for existing in mission.telemetry):
             return mission
         mission.telemetry.append(event)
@@ -117,65 +222,98 @@ class MissionService:
             mission,
             "telemetry.accepted",
             "Telemetry event accepted and deduplicated",
+            component="event-ingress",
+            status="completed",
+            input_digest=sha256_digest(event),
             event_id=event.event_id,
             affected_resources=event.affected_resources,
         )
-        return self.store.put(mission)
+        return self._save(mission)
 
     async def clarify(self, mission_id: str, request: ClarificationRequest) -> MissionRecord:
         mission = self._get(mission_id)
+        self._claim(mission, "clarification", request.idempotency_key, {"answer": request.answer})
+        if mission.status == MissionStatus.READY and mission.intent and not mission.intent.unresolved_ambiguities:
+            return mission
         if mission.status != MissionStatus.AWAITING_CLARIFICATION or not mission.operator_text:
             raise InvalidTransition("mission is not awaiting a material clarification")
-        mission.intent = await interpret_intent(
-            self.settings,
-            mission.operator_text,
-            priority_choice=request.answer,
-        )
+        mission.intent = await interpret_intent(self.settings, mission.operator_text, priority_choice=request.answer)
         mission.status = MissionStatus.READY
         self._audit(
             mission,
             "clarification.accepted",
             "Objective order updated from explicit operator choice",
+            component="gemini-adk",
+            status="completed",
+            output_digest=mission.intent.canonical_digest,
             answer=request.answer,
-            digest=mission.intent.canonical_digest,
         )
-        return self.store.put(mission)
+        return self._save(mission)
 
     async def plan(self, mission_id: str, idempotency_key: str) -> MissionRecord:
         mission = self._get(mission_id)
+        self._claim(mission, "plan", idempotency_key, {"mission_id": mission_id})
         if mission.status in {MissionStatus.VERIFIED, MissionStatus.APPLIED} and mission.plan:
             return mission
-        if mission.status not in {MissionStatus.READY, MissionStatus.PLANNING} or not mission.intent:
+        retryable = {
+            MissionStatus.READY,
+            MissionStatus.PLANNING,
+            MissionStatus.CORTEX_UNAVAILABLE,
+            MissionStatus.CONTRACT_REJECTED,
+            MissionStatus.VERIFICATION_FAILED,
+            MissionStatus.REJECTED,
+        }
+        if mission.status not in retryable or not mission.intent:
             raise InvalidTransition("mission must have resolved intent before planning")
-        mission.status = MissionStatus.PLANNING
-        self._audit(mission, "resources.quarantined", "Failed resources excluded before candidate generation")
+
+        mission.status = MissionStatus.GENERATING_BUNDLES
+        self._audit(
+            mission,
+            "resources.quarantined",
+            "Failed resources and transitive dependencies were excluded",
+            component="mission-kernel",
+            status="completed",
+        )
+        self._save(mission)
         mission.bundles = generate_candidate_bundles(mission.snapshot, mission.intent, mission.telemetry)
         self._audit(
             mission,
             "bundles.generated",
             "Deterministic locally valid candidate bundles generated",
+            component="mission-kernel",
+            status="completed",
+            output_digest=sha256_digest(mission.bundles),
             count=len(mission.bundles),
         )
+        self._save(mission)
+
         contract = cover_contract(mission.bundles, mission.intent)
+        mission.status = MissionStatus.CORTEX_COVER
         self._audit(
             mission,
-            "cortex.submitted",
+            "cortex.cover.submitted",
             "Coverage contract submitted to HexStellar Cortex"
             if self.settings.live_cortex_available
-            else "Live Cortex unavailable; bounded local fallback selected explicitly",
+            else "Live Cortex is not configured; bounded local execution is explicitly selected",
+            component="cortex-adapter",
+            status="started",
+            input_digest=sha256_digest(contract),
             live=self.settings.live_cortex_available,
-            contract_digest=sha256_digest(contract),
         )
+        self._save(mission)
+
         selected_indices: list[int]
         uncovered: list[str]
         receipts: list[CortexReceipt]
         certainty: str
         try:
-            response = await self.cortex.solve(
+            cortex_result = await self.cortex.solve(
                 "cover",
                 contract,
                 idempotency_key=f"constellation:{mission_id}:{idempotency_key}:cover",
+                effort=self.settings.cortex_cover_effort,
             )
+            response = cortex_result.body
             selected_indices = [int(index) for index in response.get("answer", [])]
             indices_valid = len(set(selected_indices)) == len(selected_indices) and all(
                 0 <= index < len(mission.bundles) for index in selected_indices
@@ -194,33 +332,73 @@ class MissionService:
                     certainty=certainty,
                     receipt=response.get("receipt", {}),
                     seed=4242,
-                    effort=self.settings.cortex_effort,
+                    effort=self.settings.cortex_cover_effort,
+                    command="cover",
+                    request_digest=cortex_result.request_digest,
+                    response_digest=sha256_digest(response),
+                    latency_ms=cortex_result.latency_ms,
+                    retry_count=cortex_result.retry_count,
                 )
             ]
-        except CortexUnavailable:
+            mission.execution_mode = ExecutionMode.LIVE
+        except CortexUnavailable as exc:
+            if self.settings.live_cortex_available:
+                mission.status = MissionStatus.CORTEX_UNAVAILABLE
+                self._audit(
+                    mission,
+                    "cortex.cover.unavailable",
+                    "The live Cortex request did not complete; no replacement plan was fabricated",
+                    component="cortex-adapter",
+                    status="failed",
+                    input_digest=sha256_digest(contract),
+                    error=str(exc),
+                )
+                return self._save(mission)
             selected_indices, uncovered = deterministic_cover(mission.bundles, mission.intent)
             certainty = "verified_operation"
-            receipts = [
-                CortexReceipt(
-                    request_id=f"offline-{mission_id}",
-                    model="local-bounded-exhaustive-cover",
-                    certainty=certainty,
-                    receipt={"offline_precomputed": True, "contract_digest": sha256_digest(contract)},
-                    seed=4242,
-                    effort="bounded",
-                )
-            ]
+            mission.execution_mode = ExecutionMode.LOCAL_DETERMINISTIC
+            receipts = [self._local_receipt(mission, "cover", contract, str(exc))]
+        except CortexContractRejected as exc:
+            mission.status = MissionStatus.CONTRACT_REJECTED
+            self._audit(
+                mission,
+                "cortex.cover.rejected",
+                "The public Cortex contract was rejected; no mission was applied",
+                component="cortex-adapter",
+                status="failed",
+                input_digest=sha256_digest(contract),
+                error=str(exc),
+            )
+            self._save(mission)
+            return mission
 
         selected = [mission.bundles[index] for index in selected_indices]
+        self._audit(
+            mission,
+            "cortex.cover.received",
+            "Coverage candidate received and contract fields recomputed",
+            component="cortex-adapter",
+            status="completed",
+            output_digest=sha256_digest(selected_indices),
+            retry_count=receipts[0].retry_count,
+            certainty=certainty,
+            selected_count=len(selected_indices),
+            uncovered_count=len(uncovered),
+        )
+        self._save(mission)
+
         topology = qap_contract()
+        mission.status = MissionStatus.CORTEX_QAP
         qap_answer: list[int] | None = None
         qap_reported_cost: int | None = None
         try:
-            qap_response = await self.cortex.solve(
+            qap_result = await self.cortex.solve(
                 "qap",
                 topology,
                 idempotency_key=f"constellation:{mission_id}:{idempotency_key}:qap",
+                effort=self.settings.cortex_qap_effort,
             )
+            qap_response = qap_result.body
             candidate_answer = [int(index) for index in qap_response.get("answer", [])]
             candidate_cost = int(qap_response.get("cost", -1))
             identity = list(range(len(topology["flow"])))
@@ -236,29 +414,48 @@ class MissionService:
                             certainty=str(qap_response.get("certainty", "abstained")),
                             receipt=qap_response.get("receipt", {}),
                             seed=4242,
-                            effort=self.settings.cortex_effort,
+                            effort=self.settings.cortex_qap_effort,
+                            command="qap",
+                            request_digest=qap_result.request_digest,
+                            response_digest=sha256_digest(qap_response),
+                            latency_ms=qap_result.latency_ms,
+                            retry_count=qap_result.retry_count,
                         )
                     )
-        except CortexUnavailable:
-            qap_answer, qap_reported_cost = deterministic_qap(topology["flow"], topology["dist"])
-            receipts.append(
-                CortexReceipt(
-                    request_id=f"offline-{mission_id}-qap",
-                    model="local-bounded-exhaustive-qap",
-                    certainty="verified_operation",
-                    receipt={"offline_precomputed": True, "contract_digest": sha256_digest(topology)},
-                    seed=4242,
-                    effort="bounded",
+        except CortexUnavailable as exc:
+            if self.settings.live_cortex_available:
+                self._audit(
+                    mission,
+                    "topology.refinement_rejected",
+                    "Coverage plan retained because live topology refinement was unavailable",
+                    component="cortex-adapter",
+                    status="failed",
+                    error=str(exc),
                 )
+            else:
+                qap_answer, qap_reported_cost = deterministic_qap(topology["flow"], topology["dist"])
+                receipts.append(self._local_receipt(mission, "qap", topology, str(exc)))
+        except CortexError as exc:
+            self._audit(
+                mission,
+                "topology.refinement_rejected",
+                "Coverage plan retained because optional topology refinement was rejected",
+                component="cortex-adapter",
+                status="failed",
+                error=str(exc),
             )
+
         self._audit(
             mission,
             "topology.refined" if qap_answer else "topology.refinement_rejected",
             "Compute placement candidate recomputed independently"
             if qap_answer
             else "Coverage plan retained without topology refinement",
-            live=self.settings.live_cortex_available,
+            component="cortex-adapter",
+            status="completed" if qap_answer else "info",
+            output_digest=sha256_digest(qap_answer) if qap_answer else None,
         )
+
         mission.plan = MissionPlan(
             mission_id=mission.id,
             selected_bundle_ids=[bundle.id for bundle in selected],
@@ -281,13 +478,22 @@ class MissionService:
             self._audit(
                 mission,
                 "mission.impossible",
-                "No plan covered every required obligation; sandbox mutation blocked",
+                "No candidate covered every required obligation; sandbox mutation is blocked",
+                status="failed",
                 uncovered=uncovered,
             )
-            return self.store.put(mission)
+            self._materialize_artifacts(mission)
+            return self._save(mission)
 
         mission.status = MissionStatus.VERIFYING
-        self._audit(mission, "verification.started", "Independent mission replay started")
+        self._audit(
+            mission,
+            "verification.started",
+            "Independent mission replay started",
+            component="independent-verifier",
+            status="started",
+        )
+        self._save(mission)
         mission.plan.verification_report = verify_mission(
             snapshot=mission.snapshot,
             intent=mission.intent,
@@ -295,40 +501,81 @@ class MissionService:
             bundles=mission.bundles,
             plan=mission.plan,
         )
-        if mission.plan.verification_report.verified:
+        report = mission.plan.verification_report
+        if report.verified:
             mission.status = MissionStatus.VERIFIED
             self._audit(
                 mission,
                 "verification.passed",
                 "All declared simulation-domain checks passed",
-                plan_digest=mission.plan.verification_report.plan_digest,
+                component="independent-verifier",
+                status="completed",
+                output_digest=report.plan_digest,
             )
         else:
-            mission.status = MissionStatus.REJECTED
+            mission.status = MissionStatus.VERIFICATION_FAILED
             mission.plan.apply_status = "rejected"
             self._audit(
                 mission,
                 "verification.failed",
-                "Independent replay found a counterexample; sandbox mutation blocked",
-                issues=[issue.model_dump(mode="json") for issue in mission.plan.verification_report.issues],
+                "Independent replay found a counterexample; sandbox mutation is blocked",
+                component="independent-verifier",
+                status="failed",
+                issues=[issue.model_dump(mode="json") for issue in report.issues],
             )
-        return self.store.put(mission)
+        self._materialize_artifacts(mission)
+        return self._save(mission)
 
-    def mark_queued(self, mission_id: str, task_name: str) -> MissionRecord:
+    @staticmethod
+    def _local_receipt(mission: MissionRecord, command: str, contract: dict[str, Any], reason: str) -> CortexReceipt:
+        return CortexReceipt(
+            request_id=f"local-{mission.id}-{command}",
+            model=f"local-bounded-exhaustive-{command}",
+            certainty="verified_operation",
+            receipt={
+                "local_deterministic": True,
+                "contract_digest": sha256_digest(contract),
+                "fallback_reason": reason,
+            },
+            seed=4242,
+            effort="bounded",
+            command=command,  # type: ignore[arg-type]
+            request_digest=sha256_digest(contract),
+            response_digest=None,
+            latency_ms=0,
+        )
+
+    def mark_queued(self, mission_id: str, task_name: str, idempotency_key: str) -> MissionRecord:
         mission = self._get(mission_id)
-        if mission.status != MissionStatus.READY:
-            raise InvalidTransition("only a ready mission can be queued")
+        self._claim(mission, "queue", idempotency_key, {"mission_id": mission_id})
+        if mission.status == MissionStatus.PLANNING:
+            return mission
+        retryable = {
+            MissionStatus.CORTEX_UNAVAILABLE,
+            MissionStatus.CONTRACT_REJECTED,
+            MissionStatus.VERIFICATION_FAILED,
+            MissionStatus.REJECTED,
+        }
+        if mission.status != MissionStatus.READY and mission.status not in retryable:
+            raise InvalidTransition("only a ready or safely retryable mission can be queued")
+        is_retry = mission.status in retryable
         mission.status = MissionStatus.PLANNING
         self._audit(
             mission,
-            "planning.queued",
-            "Durable authenticated worker task created",
+            "planning.requeued" if is_retry else "planning.queued",
+            "Durable authenticated worker retry task created"
+            if is_retry
+            else "Durable authenticated worker task created",
+            component="cloud-tasks",
+            status="completed",
             task_name=task_name,
         )
-        return self.store.put(mission)
+        return self._save(mission)
 
-    def verify(self, mission_id: str) -> MissionRecord:
+    def verify(self, mission_id: str, idempotency_key: str | None = None) -> MissionRecord:
         mission = self._get(mission_id)
+        idempotency_key = idempotency_key or f"direct-verify-{mission_id}"
+        self._claim(mission, "verify", idempotency_key, {"mission_id": mission_id})
         if not mission.intent or not mission.plan:
             raise InvalidTransition("mission has no plan to verify")
         mission.plan.verification_report = verify_mission(
@@ -338,22 +585,56 @@ class MissionService:
             bundles=mission.bundles,
             plan=mission.plan,
         )
-        mission.status = MissionStatus.VERIFIED if mission.plan.verification_report.verified else MissionStatus.REJECTED
-        return self.store.put(mission)
+        mission.status = (
+            MissionStatus.VERIFIED if mission.plan.verification_report.verified else MissionStatus.VERIFICATION_FAILED
+        )
+        return self._save(mission)
 
-    def apply(self, mission_id: str) -> MissionRecord:
+    def apply(self, mission_id: str, idempotency_key: str | None = None) -> MissionRecord:
         mission = self._get(mission_id)
+        idempotency_key = idempotency_key or f"direct-apply-{mission_id}"
+        self._claim(mission, "apply", idempotency_key, {"mission_id": mission_id})
+        if mission.status == MissionStatus.APPLIED and mission.plan:
+            return mission
         if mission.status != MissionStatus.VERIFIED or not mission.plan or not mission.plan.verification_report:
             raise InvalidTransition("only an independently verified plan can mutate sandbox state")
+        report = mission.plan.verification_report
+        current_input_digest = sha256_digest(
+            {
+                "snapshot_sha256": mission.snapshot.sha256,
+                "intent_digest": mission.intent.canonical_digest,
+                "event_ids": sorted(event.event_id for event in mission.telemetry),
+            }
+        )
+        if not report.verified or report.input_digest != current_input_digest:
+            mission.status = MissionStatus.APPLY_CONFLICT
+            self._audit(
+                mission,
+                "sandbox.apply_conflict",
+                "Verified digest no longer matches the current mission model",
+                status="failed",
+            )
+            self._save(mission)
+            raise InvalidTransition("verified digest does not match the current mission")
         mission.plan.apply_status = "applied_to_sandbox"
+        mission.applied_plan_digest = report.plan_digest
         mission.status = MissionStatus.APPLIED
         self._audit(
             mission,
             "sandbox.updated",
             "Verified plan applied to the simulated mission state",
-            plan_digest=mission.plan.verification_report.plan_digest,
+            component="sandbox-mutation",
+            status="completed",
+            output_digest=report.plan_digest,
         )
-        return self.store.put(mission)
+        try:
+            return self._save(mission)
+        except ConcurrentUpdate as exc:
+            raise InvalidTransition("mission changed before sandbox apply") from exc
 
     def get(self, mission_id: str) -> MissionRecord:
         return self._get(mission_id)
+
+    def events(self, mission_id: str, after_sequence: int = 0) -> list[AuditEvent]:
+        self._get(mission_id)
+        return self.store.list_events(mission_id, after_sequence)

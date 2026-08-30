@@ -2,24 +2,47 @@ from __future__ import annotations
 
 import asyncio
 import random
-from typing import Any
+import time
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
+from typing import Any, Literal
 from urllib.parse import urljoin
 
 import httpx
 
 from .config import Settings
+from .digests import sha256_digest
 
 
 class CortexError(RuntimeError):
-    pass
+    """Base class for public Cortex adapter failures."""
 
 
 class CortexUnavailable(CortexError):
-    pass
+    """The public service could not be reached within the declared retry budget."""
+
+
+class CortexContractRejected(CortexError):
+    """The public API rejected a malformed or unsupported contract."""
+
+
+@dataclass(frozen=True)
+class CortexResponse:
+    body: dict[str, Any]
+    latency_ms: int
+    retry_count: int
+    request_digest: str
 
 
 class CortexClient:
-    """Thin public HTTPS adapter with durable idempotency and 202 polling."""
+    """Adapter for the documented public HTTPS contract.
+
+    It performs the free analysis preflight, submits exactly once, and follows the
+    polling URL returned by the accepted request without reconstructing the job.
+    """
+
+    _commands: frozenset[str] = frozenset({"cover", "qap"})
 
     def __init__(self, settings: Settings, client: httpx.AsyncClient | None = None):
         self.settings = settings
@@ -27,83 +50,190 @@ class CortexClient:
 
     async def solve(
         self,
-        command: str,
+        command: Literal["cover", "qap"],
         problem: dict[str, Any],
         *,
         idempotency_key: str,
         seed: int = 4242,
         max_latency_ms: int = 120_000,
-    ) -> dict[str, Any]:
-        if command not in {"cover", "qap"}:
+        effort: Literal["flash", "medium", "high"] | None = None,
+    ) -> CortexResponse:
+        if command not in self._commands:
             raise ValueError("Constellation permits only the cover and qap public contracts")
         if not self.settings.live_cortex_available:
             raise CortexUnavailable("HexStellar HTTPS credentials are not configured")
+
         assert self.settings.hexstellar_api_url and self.settings.hexstellar_api_key
         base = self.settings.hexstellar_api_url.rstrip("/") + "/"
-        url = urljoin(base, f"api/v1/solve/{command}")
+        payload = {**problem, "tag": "hexstellar-cortex-v1"}
+        if not str(payload.get("description", "")).strip():
+            raise CortexContractRejected("Cortex contracts require a public description")
+        chosen_effort = effort or (
+            self.settings.cortex_cover_effort if command == "cover" else self.settings.cortex_qap_effort
+        )
+        params = {
+            "effort": chosen_effort,
+            "seed": str(seed),
+            "version": self.settings.cortex_model,
+            "max_latency_ms": str(max_latency_ms),
+        }
         headers = {
             "Authorization": f"Bearer {self.settings.hexstellar_api_key}",
             "Content-Type": "application/json",
             "Idempotency-Key": idempotency_key,
         }
-        params = {
-            "effort": self.settings.cortex_effort,
-            "seed": str(seed),
-            "version": self.settings.cortex_model,
-            "max_latency_ms": str(max_latency_ms),
-        }
         owns_client = self._client is None
-        client = self._client or httpx.AsyncClient(timeout=httpx.Timeout(35, connect=10))
+        client = self._client or httpx.AsyncClient(timeout=httpx.Timeout(40, connect=10))
+        started = time.perf_counter()
+        retry_count = 0
         try:
-            response = await self._request_with_retry(client, "POST", url, headers=headers, params=params, json=problem)
-            body = response.json()
+            analysis, retries = await self._request_with_retry(
+                client,
+                "POST",
+                urljoin(base, f"api/v1/analyze/{command}"),
+                headers=headers,
+                params=params,
+                json=payload,
+            )
+            retry_count += retries
+            if analysis.status_code >= 400:
+                raise CortexContractRejected(self._problem_detail("analysis preflight", analysis))
+
+            response, retries = await self._request_with_retry(
+                client,
+                "POST",
+                urljoin(base, f"api/v1/solve/{command}"),
+                headers=headers,
+                params=params,
+                json=payload,
+            )
+            retry_count += retries
+            body = self._json_object(response)
             if response.status_code == 200:
-                return body
-            if response.status_code != 202:
-                raise CortexError(f"Cortex rejected request with HTTP {response.status_code}: {body}")
-            poll_url = body.get("poll")
-            if not poll_url:
-                raise CortexError("queued Cortex response omitted poll URL")
-            for _ in range(25):
-                poll = await self._request_with_retry(
-                    client,
-                    "GET",
-                    urljoin(base, poll_url),
-                    headers={"Authorization": headers["Authorization"]},
+                result = body
+            elif response.status_code == 202:
+                poll_url = body.get("poll")
+                if not isinstance(poll_url, str) or not poll_url:
+                    raise CortexContractRejected("queued Cortex response omitted its poll URL")
+                result, poll_retries = await self._poll_accepted_job(
+                    client=client,
+                    accepted_url=str(response.url),
+                    poll_url=poll_url,
+                    authorization=headers["Authorization"],
+                    deadline=time.monotonic() + max_latency_ms / 1000,
+                    job_id=str(body.get("job_id", "unknown")),
                 )
-                poll_body = poll.json()
-                if poll_body.get("status") == "done":
-                    return poll_body["result"]
-                if poll_body.get("status") in {"failed", "cancelled"}:
-                    raise CortexError(f"Cortex job ended with status {poll_body.get('status')}")
-            raise CortexUnavailable(f"Cortex job remains queued; recover with job_id={body.get('job_id')}")
+                retry_count += poll_retries
+            else:
+                raise CortexContractRejected(self._problem_detail("solve request", response))
+            return CortexResponse(
+                body=result,
+                latency_ms=round((time.perf_counter() - started) * 1000),
+                retry_count=retry_count,
+                request_digest=sha256_digest(payload),
+            )
         finally:
             if owns_client:
                 await client.aclose()
 
+    async def _poll_accepted_job(
+        self,
+        *,
+        client: httpx.AsyncClient,
+        accepted_url: str,
+        poll_url: str,
+        authorization: str,
+        deadline: float,
+        job_id: str,
+    ) -> tuple[dict[str, Any], int]:
+        literal_poll_url = urljoin(accepted_url, poll_url)
+        retries_total = 0
+        while time.monotonic() < deadline:
+            response, retries = await self._request_with_retry(
+                client,
+                "GET",
+                literal_poll_url,
+                headers={"Authorization": authorization},
+            )
+            retries_total += retries
+            if response.status_code >= 400:
+                raise CortexContractRejected(self._problem_detail("job poll", response))
+            body = self._json_object(response)
+            status = body.get("status")
+            if status == "done":
+                result = body.get("result")
+                if not isinstance(result, dict):
+                    raise CortexContractRejected("completed Cortex job omitted a result object")
+                return result, retries_total
+            if status in {"failed", "cancelled"}:
+                raise CortexContractRejected(f"Cortex job {job_id} ended with status {status}")
+            if status is None and "answer" in body:
+                return body, retries_total
+            await asyncio.sleep(min(0.5, max(0, deadline - time.monotonic())))
+        raise CortexUnavailable(f"Cortex job exceeded the declared latency budget; job_id={job_id}")
+
     async def _request_with_retry(
         self, client: httpx.AsyncClient, method: str, url: str, **kwargs: Any
-    ) -> httpx.Response:
+    ) -> tuple[httpx.Response, int]:
         last_error: Exception | None = None
-        for attempt in range(3):
+        for attempt in range(4):
             try:
                 response = await client.request(method, url, **kwargs)
                 conflict_in_progress = False
                 if response.status_code == 409:
-                    try:
-                        conflict_in_progress = response.json().get("code") == "HXS_IDEMPOTENCY_IN_PROGRESS"
-                    except ValueError:
-                        conflict_in_progress = False
-                retryable = response.status_code in {408, 429} or response.status_code >= 500 or conflict_in_progress
+                    conflict_in_progress = (
+                        self._json_object(response).get("code") == "HXS_IDEMPOTENCY_IN_PROGRESS"
+                    )
+                retryable = (
+                    response.status_code in {408, 425, 429}
+                    or response.status_code >= 500
+                    or conflict_in_progress
+                )
                 if not retryable:
-                    return response
-                retry_after = response.headers.get("Retry-After")
-                delay = min(float(retry_after), 120) if retry_after and retry_after.isdigit() else 2**attempt
+                    return response, attempt
+                if attempt == 3:
+                    raise CortexUnavailable(self._problem_detail("request retry budget", response))
+                delay = self._retry_delay(response.headers.get("Retry-After"), attempt)
                 if conflict_in_progress:
-                    delay = max(delay, 1)
+                    delay = max(delay, 1.0)
             except (httpx.TimeoutException, httpx.NetworkError) as exc:
                 last_error = exc
-                delay = 2**attempt
-            if attempt < 2:
-                await asyncio.sleep(delay + random.Random(attempt).random() * 0.25)
-        raise CortexUnavailable(f"Cortex transport failed after bounded retries: {last_error}")
+                if attempt == 3:
+                    break
+                delay = min(2**attempt, 30)
+            await asyncio.sleep(delay + random.SystemRandom().uniform(0, 0.25))
+        raise CortexUnavailable(f"Cortex transport failed after bounded retries: {type(last_error).__name__}")
+
+    @staticmethod
+    def _retry_delay(value: str | None, attempt: int) -> float:
+        if value:
+            try:
+                return min(max(float(value), 0), 120)
+            except ValueError:
+                try:
+                    retry_at = parsedate_to_datetime(value)
+                    if retry_at.tzinfo is None:
+                        retry_at = retry_at.replace(tzinfo=UTC)
+                    return min(max((retry_at - datetime.now(UTC)).total_seconds(), 0), 120)
+                except (TypeError, ValueError, OverflowError):
+                    pass
+        return float(min(2**attempt, 30))
+
+    @staticmethod
+    def _json_object(response: httpx.Response) -> dict[str, Any]:
+        try:
+            value = response.json()
+        except ValueError as exc:
+            raise CortexContractRejected(f"Cortex returned non-JSON HTTP {response.status_code}") from exc
+        if not isinstance(value, dict):
+            raise CortexContractRejected("Cortex returned a non-object JSON response")
+        return value
+
+    @classmethod
+    def _problem_detail(cls, operation: str, response: httpx.Response) -> str:
+        try:
+            body = cls._json_object(response)
+            detail = body.get("detail") or body.get("title") or body.get("code") or "request rejected"
+        except CortexContractRejected:
+            detail = "non-JSON response"
+        return f"Cortex {operation} failed with HTTP {response.status_code}: {detail}"

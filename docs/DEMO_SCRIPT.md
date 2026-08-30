@@ -43,3 +43,5 @@ Show `docs/architecture.svg` and identify Gemini, ADK, Pub/Sub, Cloud Tasks, Clo
 Show the public `.run.app` URL, Cloud Run revision, Vertex model ID, and the exact submitted Git commit.
 
 > Constellation. Say the mission. Prove the plan.
+
+> **BRAYON PIESKE** — *"Engineering earns trust when every claim is testable and every release is verified."*

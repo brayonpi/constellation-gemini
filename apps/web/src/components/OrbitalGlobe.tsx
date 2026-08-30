@@ -1,108 +1,228 @@
-import { useEffect, useRef } from 'react'
-import type { Mission } from '../types'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { Component, useMemo, useRef } from 'react'
+import type { ReactNode } from 'react'
+import * as THREE from 'three'
+import type { Mission, MissionView } from '../types'
 
-type View = 'nominal' | 'incident' | 'recovered' | 'diff'
+const fallbackSatellites = Array.from({ length: 12 }, (_, index) => ({
+  id: `SAT-${String(index + 1).padStart(2, '0')}`,
+  orbit_phase_deg: index * 30,
+  isolated: false,
+  energy_capacity: 100,
+  storage_capacity: 100,
+}))
 
-export function OrbitalGlobe({ mission, view }: { mission?: Mission; view: View }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+function satellitePosition(phaseDegrees: number, index: number, elapsed = 0): THREE.Vector3 {
+  const radius = 2.05 + (index % 3) * 0.28
+  const phase = THREE.MathUtils.degToRad(phaseDegrees) + elapsed * (0.035 + (index % 3) * 0.008)
+  return new THREE.Vector3(
+    Math.cos(phase) * radius,
+    Math.sin(phase * 0.94) * 0.62 + ((index % 3) - 1) * 0.18,
+    Math.sin(phase) * radius * 0.72,
+  )
+}
 
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const context = canvas.getContext('2d')
-    if (!context) return
-    let frame = 0
-    let animation = 0
-    const scale = window.devicePixelRatio || 1
+function globePosition(latitude: number, longitude: number, radius = 1.32): THREE.Vector3 {
+  const phi = THREE.MathUtils.degToRad(90 - latitude)
+  const theta = THREE.MathUtils.degToRad(longitude + 180)
+  return new THREE.Vector3(
+    -(radius * Math.sin(phi) * Math.cos(theta)),
+    radius * Math.cos(phi),
+    radius * Math.sin(phi) * Math.sin(theta),
+  )
+}
 
-    const draw = () => {
-      const width = canvas.clientWidth
-      const height = canvas.clientHeight
-      canvas.width = width * scale
-      canvas.height = height * scale
-      context.setTransform(scale, 0, 0, scale, 0, 0)
-      context.clearRect(0, 0, width, height)
-      const cx = width / 2
-      const cy = height / 2 + 18
-      const radius = Math.min(width, height) * 0.245
+function InstancedSatellites({ mission, view, reducedMotion }: {
+  mission?: Mission
+  view: MissionView
+  reducedMotion: boolean
+}) {
+  const ref = useRef<THREE.InstancedMesh>(null)
+  const satellites = mission?.snapshot.satellites ?? fallbackSatellites
+  const selectedBundles = new Set(mission?.plan?.selected_bundle_ids ?? [])
+  const recoveredSatellites = new Set(
+    mission?.bundles.filter((bundle) => selectedBundles.has(bundle.id)).map((bundle) => bundle.satellite_id) ?? [],
+  )
+  const failed = new Set(
+    mission?.telemetry.flatMap((event) => event.affected_resources)
+      .filter((resource) => resource.startsWith('COMPUTE-'))
+      .map((resource) => resource.replace('COMPUTE-', '')) ?? ['SAT-07', 'SAT-08'],
+  )
+  const helper = useMemo(() => new THREE.Object3D(), [])
+  const colors = useMemo(() => ({
+    nominal: new THREE.Color('#67a1ff'),
+    failed: new THREE.Color('#ff5b6e'),
+    recovered: new THREE.Color('#59e2b0'),
+  }), [])
 
-      const halo = context.createRadialGradient(cx, cy, radius * 0.2, cx, cy, radius * 1.65)
-      halo.addColorStop(0, 'rgba(50, 112, 255, .17)')
-      halo.addColorStop(0.55, 'rgba(74, 132, 255, .06)')
-      halo.addColorStop(1, 'rgba(255,255,255,0)')
-      context.fillStyle = halo
-      context.beginPath()
-      context.arc(cx, cy, radius * 1.7, 0, Math.PI * 2)
-      context.fill()
+  useFrame((state) => {
+    const mesh = ref.current
+    if (!mesh) return
+    const elapsed = reducedMotion ? 0 : state.clock.elapsedTime
+    satellites.forEach((satellite, index) => {
+      helper.position.copy(satellitePosition(satellite.orbit_phase_deg, index, elapsed))
+      const isFailed = view !== 'nominal' && failed.has(satellite.id)
+      const isRecovered = ['recovered', 'diff'].includes(view) && recoveredSatellites.has(satellite.id)
+      const pulse = isRecovered && !reducedMotion ? 1 + Math.sin(elapsed * 3 + index) * 0.12 : 1
+      helper.scale.setScalar((isFailed ? 1.22 : 1) * pulse)
+      helper.updateMatrix()
+      mesh.setMatrixAt(index, helper.matrix)
+      mesh.setColorAt(index, isFailed ? colors.failed : isRecovered ? colors.recovered : colors.nominal)
+    })
+    mesh.instanceMatrix.needsUpdate = true
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+  })
 
-      context.strokeStyle = 'rgba(69, 113, 184, .15)'
-      context.lineWidth = 1
-      for (const orbitScale of [1.38, 1.62, 1.88]) {
-        context.save()
-        context.translate(cx, cy)
-        context.rotate(-0.18)
-        context.scale(1, 0.36)
-        context.beginPath()
-        context.arc(0, 0, radius * orbitScale, 0, Math.PI * 2)
-        context.stroke()
-        context.restore()
-      }
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, satellites.length]} frustumCulled={false}>
+      <icosahedronGeometry args={[0.075, 1]} />
+      <meshStandardMaterial roughness={0.28} metalness={0.55} emissive="#1a4fbe" emissiveIntensity={0.28} />
+    </instancedMesh>
+  )
+}
 
-      const earth = context.createRadialGradient(cx - radius * .4, cy - radius * .5, radius * .1, cx, cy, radius)
-      earth.addColorStop(0, '#edf8ff')
-      earth.addColorStop(.58, '#bed9fb')
-      earth.addColorStop(1, '#6e9cda')
-      context.fillStyle = earth
-      context.beginPath()
-      context.arc(cx, cy, radius, 0, Math.PI * 2)
-      context.fill()
-      context.save()
-      context.beginPath()
-      context.arc(cx, cy, radius - 1, 0, Math.PI * 2)
-      context.clip()
-      context.strokeStyle = 'rgba(255,255,255,.55)'
-      for (let offset = -2; offset <= 2; offset += 1) {
-        context.beginPath()
-        context.ellipse(cx, cy + offset * radius * .34, radius, radius * .16, 0, 0, Math.PI * 2)
-        context.stroke()
-      }
-      context.fillStyle = 'rgba(255,255,255,.34)'
-      context.beginPath()
-      context.ellipse(cx - radius * .25, cy - radius * .05, radius * .28, radius * .13, -.35, 0, Math.PI * 2)
-      context.ellipse(cx + radius * .28, cy + radius * .25, radius * .2, radius * .1, .45, 0, Math.PI * 2)
-      context.fill()
-      context.restore()
+function OrbitRings({ incident }: { incident: boolean }) {
+  return <group rotation={[Math.PI / 2.8, 0.08, -0.22]}>
+    {[2.05, 2.33, 2.61].map((radius) => (
+      <mesh key={radius} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[radius, 0.006, 6, 160]} />
+        <meshBasicMaterial color={incident ? '#334b79' : '#8eb4ef'} transparent opacity={0.34} />
+      </mesh>
+    ))}
+  </group>
+}
 
-      const satellites = mission?.snapshot.satellites ?? Array.from({ length: 12 }, (_, index) => ({ id: `SAT-${String(index + 1).padStart(2, '0')}`, orbit_phase_deg: index * 30, isolated: false }))
-      const selected = new Set(mission?.plan?.selected_bundle_ids.flatMap((id) => id.match(/SAT-\d\d/g) ?? []))
-      satellites.forEach((satellite, index) => {
-        const orbit = 1.38 + (index % 3) * .25
-        const phase = satellite.orbit_phase_deg * Math.PI / 180 + frame * .0012
-        const x = cx + Math.cos(phase) * radius * orbit
-        const y = cy + Math.sin(phase) * radius * orbit * .36
-        const isFailed = view !== 'nominal' && ['SAT-07', 'SAT-08'].includes(satellite.id)
-        const isRecovered = (view === 'recovered' || view === 'diff') && selected.has(satellite.id)
-        context.fillStyle = isFailed ? '#e34a4a' : isRecovered ? '#20a879' : '#2767f0'
-        context.shadowColor = context.fillStyle
-        context.shadowBlur = 10
-        context.beginPath()
-        context.arc(x, y, isRecovered ? 4.8 : 3.6, 0, Math.PI * 2)
-        context.fill()
-        context.shadowBlur = 0
-        if (isFailed) {
-          context.strokeStyle = 'rgba(227, 74, 74, .35)'
-          context.beginPath()
-          context.arc(x, y, 9, 0, Math.PI * 2)
-          context.stroke()
-        }
-      })
+function GroundStations({ mission, view }: { mission?: Mission; view: MissionView }) {
+  const stations = mission?.snapshot.ground_stations ?? []
+  const failed = view !== 'nominal' ? 'GS-PACIFIC-02' : undefined
+  return <group>
+    {stations.map((station) => {
+      const position = globePosition(station.latitude, station.longitude)
+      const direction = position.clone().normalize()
+      const rotation = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction)
+      const isFailed = station.id === failed
+      return <group key={station.id} position={position} quaternion={rotation}>
+        <mesh>
+          <sphereGeometry args={[0.045, 12, 12]} />
+          <meshBasicMaterial color={isFailed ? '#ff5b6e' : '#7ce2ff'} />
+        </mesh>
+        <mesh position={[0, 0.17, 0]}>
+          <coneGeometry args={[0.13, 0.34, 20, 1, true]} />
+          <meshBasicMaterial
+            color={isFailed ? '#ff5b6e' : '#6bd8ff'}
+            transparent
+            opacity={isFailed ? 0.1 : 0.12}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      </group>
+    })}
+  </group>
+}
 
-      frame += 1
-      animation = requestAnimationFrame(draw)
+function OpticalLinks({ mission, view }: { mission?: Mission; view: MissionView }) {
+  const geometry = useMemo(() => {
+    const satellites = mission?.snapshot.satellites ?? fallbackSatellites
+    const byId = new Map(satellites.map((satellite, index) => [
+      satellite.id,
+      satellitePosition(satellite.orbit_phase_deg, index),
+    ]))
+    const points = (mission?.snapshot.links ?? []).flatMap((link) => {
+      const source = byId.get(link.source)
+      const target = byId.get(link.target)
+      return source && target ? [source, target] : []
+    })
+    return new THREE.BufferGeometry().setFromPoints(points)
+  }, [mission])
+  return <lineSegments geometry={geometry}>
+    <lineBasicMaterial
+      color={view === 'incident' ? '#677a9f' : view === 'nominal' ? '#6abfff' : '#5ce1b0'}
+      transparent
+      opacity={view === 'incident' ? 0.26 : 0.62}
+    />
+  </lineSegments>
+}
+
+function OrbitalScene({ mission, view, reducedMotion }: {
+  mission?: Mission
+  view: MissionView
+  reducedMotion: boolean
+}) {
+  const group = useRef<THREE.Group>(null)
+  const incident = view === 'incident'
+  useFrame((state, delta) => {
+    if (group.current && !reducedMotion) {
+      group.current.rotation.y += delta * (incident ? 0.018 : 0.038)
+      group.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.14) * 0.035
     }
-    draw()
-    return () => cancelAnimationFrame(animation)
-  }, [mission, view])
+  })
+  return <>
+    <ambientLight intensity={incident ? 0.42 : 0.92} />
+    <directionalLight position={[4, 4, 5]} intensity={incident ? 1.1 : 1.8} color="#dcecff" />
+    <pointLight position={[-4, -2, 3]} intensity={incident ? 2 : 1} color={incident ? '#365be0' : '#53c9ff'} />
+    <group ref={group} rotation={[0.12, -0.15, 0]}>
+      <mesh>
+        <sphereGeometry args={[1.28, 64, 64]} />
+        <meshStandardMaterial
+          color={incident ? '#142449' : '#b9dcff'}
+          roughness={0.72}
+          metalness={0.04}
+          emissive={incident ? '#07142d' : '#2b6dad'}
+          emissiveIntensity={incident ? 0.32 : 0.12}
+        />
+      </mesh>
+      <mesh scale={1.035}>
+        <sphereGeometry args={[1.28, 48, 48]} />
+        <meshBasicMaterial color="#76d7ff" transparent opacity={incident ? 0.055 : 0.11} side={THREE.BackSide} />
+      </mesh>
+      <OrbitRings incident={incident} />
+      <OpticalLinks mission={mission} view={view} />
+      <GroundStations mission={mission} view={view} />
+      <InstancedSatellites mission={mission} view={view} reducedMotion={reducedMotion} />
+    </group>
+  </>
+}
 
-  return <canvas className="globe-canvas" ref={canvasRef} aria-label="Data-driven orbital mission visualization" />
+class GlobeErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+  static getDerivedStateFromError() { return { failed: true } }
+  render() { return this.state.failed ? this.props.fallback : this.props.children }
+}
+
+function AccessibleFallback({ mission, view }: { mission?: Mission; view: MissionView }) {
+  const affected = mission?.telemetry.flatMap((event) => event.affected_resources) ?? []
+  return <div className="globe-fallback" role="img" aria-label="Textual orbital mission state">
+    <strong>{view === 'nominal' ? 'Nominal constellation' : `${view} mission state`}</strong>
+    <p>{mission?.snapshot.satellites.length ?? 12} simulated satellites · {affected.length} affected resources</p>
+    {affected.length > 0 && <code>{affected.join(' · ')}</code>}
+  </div>
+}
+
+export function OrbitalGlobe({ mission, view }: { mission?: Mission; view: MissionView }) {
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+  const webgl = Boolean(document.createElement('canvas').getContext('webgl2'))
+  const fallback = <AccessibleFallback mission={mission} view={view} />
+  if (!webgl) return fallback
+  return <div className="globe-stage" data-view={view}>
+    <GlobeErrorBoundary fallback={fallback}>
+      <Canvas
+        dpr={[1, 1.65]}
+        camera={{ position: [0, 0.4, 6.4], fov: 43, near: 0.1, far: 100 }}
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+        fallback={fallback}
+      >
+        <OrbitalScene mission={mission} view={view} reducedMotion={reducedMotion} />
+      </Canvas>
+    </GlobeErrorBoundary>
+    <div className="globe-status-rail" aria-hidden="true">
+      <span className={view !== 'nominal' ? 'lit alert' : 'lit'} />
+      <i />
+      <span className={['recovered', 'diff'].includes(view) ? 'lit recovered' : ''} />
+    </div>
+    <span className="sr-only">
+      {view === 'nominal'
+        ? 'Nominal simulated constellation.'
+        : `Mission ${view}. Affected resources are ${mission?.telemetry.flatMap((event) => event.affected_resources).join(', ') || 'pending'}.`}
+    </span>
+  </div>
 }

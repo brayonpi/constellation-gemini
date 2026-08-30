@@ -20,8 +20,16 @@ variable "image" {
   type        = string
 }
 
+variable "billing_account_id" {
+  description = "Optional billing account ID used to create the USD 50 deployment budget guardrail."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
 variable "hexstellar_api_url" {
   description = "Public HexStellar API base URL."
   type        = string
   sensitive   = false
+  default     = "https://api.hexstellar.com"
 }

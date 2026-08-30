@@ -11,6 +11,8 @@ __pycache__/
 node_modules/
 dist/
 coverage/
+.coverage
+coverage.xml
 .terraform/
 *.tfstate*
 artifacts/

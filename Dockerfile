@@ -1,7 +1,7 @@
 FROM node:22-alpine AS web
 WORKDIR /app/apps/web
 COPY apps/web/package*.json ./
-RUN npm install
+RUN npm ci
 COPY apps/web/ ./
 RUN npm run build
 
@@ -13,8 +13,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PORT=8080 \
 WORKDIR /app
 COPY pyproject.toml README.md LICENSE ./
 COPY apps/api ./apps/api
+RUN python -m pip install --no-cache-dir '.[google]'
 COPY data ./data
 COPY --from=web /app/apps/web/dist ./apps/web/dist
-RUN python -m pip install --no-cache-dir '.[google]'
 USER 65532:65532
 CMD ["sh", "-c", "uvicorn constellation.main:app --host 0.0.0.0 --port ${PORT}"]

@@ -1,0 +1,32 @@
+// @vitest-environment jsdom
+
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
+import { testMission } from '../testMission'
+import { DecisionTrace } from './DecisionTrace'
+import { EvidenceRoom } from './EvidenceRoom'
+
+afterEach(cleanup)
+
+describe('Evidence surfaces', () => {
+  it('exposes exact boundaries, replay download, checks, and immutable artifacts', () => {
+    render(<EvidenceRoom mission={testMission()} />)
+    expect(screen.getByRole('heading', { name: 'Trust is inspectable' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Replay ZIP/ }).getAttribute('href')).toBe('/api/v1/missions/mission-1/bundle')
+    expect(screen.getByText('VERIFIED')).toBeTruthy()
+    expect(screen.getByText('coverage')).toBeTruthy()
+    expect(screen.getByText('2 immutable files')).toBeTruthy()
+    expect(screen.getByText('AI-REVIEW-PROMPT.md')).toBeTruthy()
+    expect(screen.getByText(/not a universal language claim/)).toBeTruthy()
+  })
+
+  it('filters observable events without exposing hidden reasoning', () => {
+    render(<DecisionTrace mission={testMission()} busy={false} />)
+    expect(screen.getByText('Mission intent compiled')).toBeTruthy()
+    expect(screen.getByText('Replay passed')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'verifier' }))
+    expect(screen.queryByText('Mission intent compiled')).toBeNull()
+    expect(screen.getByText('Replay passed')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Download event log' }).getAttribute('href')).toBe('/api/v1/missions/mission-1/logs')
+  })
+})

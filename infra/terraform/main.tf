@@ -2,6 +2,7 @@ locals {
   services = toset([
     "aiplatform.googleapis.com",
     "artifactregistry.googleapis.com",
+    "billingbudgets.googleapis.com",
     "cloudbuild.googleapis.com",
     "firestore.googleapis.com",
     "pubsub.googleapis.com",
@@ -119,12 +120,6 @@ resource "google_project_iam_member" "web_firestore" {
   member  = "serviceAccount:${google_service_account.web.email}"
 }
 
-resource "google_project_iam_member" "web_vertex" {
-  project = var.project_id
-  role    = "roles/aiplatform.user"
-  member  = "serviceAccount:${google_service_account.web.email}"
-}
-
 resource "google_project_iam_member" "worker_tasks" {
   project = var.project_id
   role    = "roles/cloudtasks.enqueuer"
@@ -141,6 +136,30 @@ resource "google_storage_bucket_iam_member" "worker_evidence" {
   bucket = google_storage_bucket.evidence.name
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.worker.email}"
+}
+
+resource "google_storage_bucket_iam_member" "web_evidence_reader" {
+  bucket = google_storage_bucket.evidence.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${google_service_account.web.email}"
+}
+
+resource "google_billing_budget" "constellation" {
+  count           = var.billing_account_id == null ? 0 : 1
+  billing_account = var.billing_account_id
+  display_name    = "Constellation hackathon guardrail"
+  budget_filter {
+    projects = ["projects/${data.google_project.current.number}"]
+  }
+  amount {
+    specified_amount {
+      currency_code = "USD"
+      units         = "50"
+    }
+  }
+  threshold_rules { threshold_percent = 0.5 }
+  threshold_rules { threshold_percent = 0.9 }
+  threshold_rules { threshold_percent = 1.0 }
 }
 
 resource "google_cloud_tasks_queue" "plans" {
@@ -163,10 +182,11 @@ resource "google_cloud_run_v2_service" "worker" {
   name                = "constellation-worker"
   location            = var.region
   deletion_protection = true
-  ingress             = "INGRESS_TRAFFIC_ALL"
+  ingress             = "INGRESS_TRAFFIC_INTERNAL_ONLY"
   template {
-    service_account = google_service_account.worker.email
-    timeout         = "900s"
+    service_account                 = google_service_account.worker.email
+    timeout                         = "900s"
+    max_instance_request_concurrency = 4
     scaling {
       min_instance_count = 0
       max_instance_count = 4
@@ -175,6 +195,23 @@ resource "google_cloud_run_v2_service" "worker" {
       image = var.image
       resources {
         limits = { cpu = "2", memory = "2Gi" }
+      }
+      startup_probe {
+        initial_delay_seconds = 2
+        timeout_seconds       = 3
+        period_seconds        = 5
+        failure_threshold     = 12
+        http_get {
+          path = "/api/v1/health/ready"
+        }
+      }
+      liveness_probe {
+        timeout_seconds   = 3
+        period_seconds    = 10
+        failure_threshold = 3
+        http_get {
+          path = "/api/v1/health/live"
+        }
       }
       env {
         name  = "CONSTELLATION_MODE"
@@ -201,8 +238,20 @@ resource "google_cloud_run_v2_service" "worker" {
         value = "gemini-3.5-flash"
       }
       env {
-        name  = "HEXTELLAR_API_URL"
+        name  = "HEXSTELLAR_API_URL"
         value = var.hexstellar_api_url
+      }
+      env {
+        name  = "CORTEX_COVER_EFFORT"
+        value = "medium"
+      }
+      env {
+        name  = "CORTEX_QAP_EFFORT"
+        value = "flash"
+      }
+      env {
+        name  = "CONSTELLATION_ARTIFACT_BUCKET"
+        value = google_storage_bucket.evidence.name
       }
       env {
         name  = "CONSTELLATION_TASK_SERVICE_ACCOUNT"
@@ -213,7 +262,7 @@ resource "google_cloud_run_v2_service" "worker" {
         value = var.region
       }
       env {
-        name = "HEXTELLAR_API_KEY"
+        name = "HEXSTELLAR_API_KEY"
         value_source {
           secret_key_ref {
             secret  = google_secret_manager_secret.hexstellar_api_key.secret_id
@@ -232,16 +281,34 @@ resource "google_cloud_run_v2_service" "web" {
   deletion_protection = true
   ingress             = "INGRESS_TRAFFIC_ALL"
   template {
-    service_account = google_service_account.web.email
-    timeout         = "60s"
+    service_account                 = google_service_account.web.email
+    timeout                         = "60s"
+    max_instance_request_concurrency = 40
     scaling {
       min_instance_count = 0
-      max_instance_count = 5
+      max_instance_count = 3
     }
     containers {
       image = var.image
       resources {
         limits = { cpu = "1", memory = "512Mi" }
+      }
+      startup_probe {
+        initial_delay_seconds = 2
+        timeout_seconds       = 3
+        period_seconds        = 5
+        failure_threshold     = 12
+        http_get {
+          path = "/api/v1/health/ready"
+        }
+      }
+      liveness_probe {
+        timeout_seconds   = 3
+        period_seconds    = 10
+        failure_threshold = 3
+        http_get {
+          path = "/api/v1/health/live"
+        }
       }
       env {
         name  = "CONSTELLATION_MODE"
@@ -252,20 +319,8 @@ resource "google_cloud_run_v2_service" "web" {
         value = "web"
       }
       env {
-        name  = "GOOGLE_GENAI_USE_VERTEXAI"
-        value = "TRUE"
-      }
-      env {
         name  = "GOOGLE_CLOUD_PROJECT"
         value = var.project_id
-      }
-      env {
-        name  = "GOOGLE_CLOUD_LOCATION"
-        value = var.gemini_location
-      }
-      env {
-        name  = "GEMINI_MODEL"
-        value = "gemini-3.5-flash"
       }
       env {
         name  = "CONSTELLATION_TASK_SERVICE_ACCOUNT"
@@ -278,6 +333,10 @@ resource "google_cloud_run_v2_service" "web" {
       env {
         name  = "CONSTELLATION_WORKER_BASE_URL"
         value = google_cloud_run_v2_service.worker.uri
+      }
+      env {
+        name  = "CONSTELLATION_ARTIFACT_BUCKET"
+        value = google_storage_bucket.evidence.name
       }
     }
   }

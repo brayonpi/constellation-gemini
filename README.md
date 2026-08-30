@@ -2,6 +2,8 @@
 
 > **Say the mission. Prove the plan.**
 
+![Constellation — proof-carrying mission control](docs/assets/constellation-cover.png)
+
 Constellation is proof-carrying mission control for a deterministic orbital AI simulation.
 Gemini 3.5 Flash interprets operator intent, Google ADK coordinates the workflow, HexStellar Cortex searches a declared combinatorial contract, and an independent Python verifier decides whether the resulting timeline may update the sandbox.
 
@@ -52,8 +54,11 @@ cd apps/web && npm run typecheck && npm run test
 Verify a downloaded replay independently:
 
 ```bash
-PYTHONPATH=apps/api .venv/bin/python -m constellation.cli verify replay.json
+PYTHONPATH=apps/api .venv/bin/python -m constellation.verify_bundle artifacts/mission-replay.zip
 ```
+
+If a judge or engineer wants an AI-assisted audit, use [AI_REVIEW_GUIDE.md](AI_REVIEW_GUIDE.md).
+The same adversarial prompt ships inside every replay ZIP as `AI-REVIEW-PROMPT.md`; it asks the AI to validate checksums, trace trust boundaries, recompute declared properties, report blockers, and narrow unsupported claims.
 
 ## Live integration
 
@@ -88,7 +93,7 @@ flowchart LR
     K --> U
 ```
 
-See [Architecture](docs/ARCHITECTURE.md), [Security](docs/SECURITY.md), [Evidence language](docs/EVIDENCE.md), and [Submission checklist](docs/SUBMISSION.md).
+See [Architecture](docs/ARCHITECTURE.md), [Security](docs/SECURITY.md), [Claims and limitations](docs/CLAIMS_AND_LIMITATIONS.md), [Evidence language](docs/EVIDENCE.md), [Release inventory](docs/RELEASE_INVENTORY.md), [Release audit](docs/RELEASE_AUDIT.md), and [Submission checklist](docs/SUBMISSION.md).
 
 ## Data and simulation boundaries
 
@@ -118,7 +123,12 @@ The Enterprise Runtime does not execute this application, and no Enterprise ener
 - `verified`: the independent Constellation verifier recomputed the stated simulation property.
 - `heuristic`: a valid candidate without a proof of optimality or convergence.
 - `abstained`: the contract or evidence was insufficient.
-- `offline_precomputed`: a clearly labeled local replay or fallback, not a live external call.
+- `local_deterministic`: bounded deterministic execution selected because the environment was explicitly started without live Cortex credentials.
+- `offline_precomputed`: a committed contingency replay only; it is never used as a hidden replacement for a failed live request.
+- `degraded_fixture`: structured interpretation fixture used when live Gemini is not configured or fails, with the reason persisted in evidence.
+
+If Cortex is configured as live and becomes unavailable, the run stops in `CORTEX_UNAVAILABLE`.
+Constellation does not silently replace that live request with local output.
 
 No combined `cover` + `qap` result is described as jointly globally optimal.
 

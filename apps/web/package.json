@@ -12,10 +12,13 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@react-three/fiber": "^9.3.0",
+    "@types/three": "^0.180.0",
     "@vitejs/plugin-react": "^5.0.4",
     "lucide-react": "^0.544.0",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "three": "^0.180.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.34.0",

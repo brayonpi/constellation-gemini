@@ -10,3 +10,7 @@ output "worker_url" {
 output "telemetry_topic" {
   value = google_pubsub_topic.telemetry.name
 }
+
+output "evidence_bucket" {
+  value = google_storage_bucket.evidence.name
+}

@@ -1,6 +1,7 @@
-import type { Mission } from './types'
+import type { AuditEvent, Health, Mission } from './types'
 
-const headers = { 'Content-Type': 'application/json' }
+const jsonHeaders = { 'Content-Type': 'application/json' }
+const key = (prefix: string) => `${prefix}-${crypto.randomUUID()}`
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, init)
@@ -11,44 +12,71 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>
 }
 
-const key = (prefix: string) => `${prefix}-${crypto.randomUUID()}`
+function mutation(idempotencyKey: string, body: Record<string, unknown>): RequestInit {
+  return {
+    method: 'POST',
+    headers: { ...jsonHeaders, 'Idempotency-Key': idempotencyKey },
+    body: JSON.stringify({ ...body, idempotency_key: idempotencyKey }),
+  }
+}
 
 export const api = {
-  health: () => request<{ mode: string; gemini_live: boolean; cortex_live: boolean }>('/api/v1/health'),
-  create: () => request<Mission>('/api/v1/missions', {
-    method: 'POST', headers, body: JSON.stringify({ name: 'Orbital resilience mission', fixture: 'demo-12', idempotency_key: key('create') }),
-  }),
-  intent: (missionId: string, text: string) => request<Mission>(`/api/v1/missions/${missionId}/intent`, {
-    method: 'POST', headers, body: JSON.stringify({ text, idempotency_key: key('intent') }),
-  }),
-  event: (missionId: string) => request<Mission>(`/api/v1/missions/${missionId}/events`, {
-    method: 'POST',
-    headers: { ...headers, 'Idempotency-Key': key('event') },
-    body: JSON.stringify({
-      event_id: `GROUND-OUTAGE-${missionId.slice(0, 8)}`,
-      event_type: 'compound_orbital_compute_failure',
-      affected_resources: ['GS-PACIFIC-02', 'COMPUTE-SAT-07', 'COMPUTE-SAT-08'],
-      start_minute: 5,
-      expected_duration_minutes: 42,
-      confidence: 1,
-      source: 'pubsub-demo-ingress',
-    }),
-  }),
-  clarify: (missionId: string) => request<Mission>(`/api/v1/missions/${missionId}/clarifications`, {
-    method: 'POST', headers, body: JSON.stringify({ answer: 'urgent_deadline', idempotency_key: key('clarify') }),
-  }),
-  plan: async (missionId: string) => {
-    let mission = await request<Mission>(`/api/v1/missions/${missionId}/plan`, {
-      method: 'POST', headers, body: JSON.stringify({ idempotency_key: key('plan') }),
-    })
-    for (let attempt = 0; mission.status === 'planning' && attempt < 120; attempt += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      mission = await request<Mission>(`/api/v1/missions/${missionId}`)
-    }
-    return mission
+  health: () => request<Health>('/api/v1/health'),
+  get: (missionId: string) => request<Mission>(`/api/v1/missions/${missionId}`),
+  create: () => {
+    const idempotencyKey = key('create')
+    return request<Mission>('/api/v1/missions', mutation(idempotencyKey, {
+      name: 'Orbital resilience mission', fixture: 'demo-12',
+    }))
   },
-  apply: (missionId: string) => request<Mission>(`/api/v1/missions/${missionId}/apply-sandbox`, {
-    method: 'POST', headers, body: JSON.stringify({ idempotency_key: key('apply') }),
-  }),
+  intent: (missionId: string, text: string) => {
+    const idempotencyKey = key('intent')
+    return request<Mission>(`/api/v1/missions/${missionId}/intent`, mutation(idempotencyKey, { text }))
+  },
+  event: (missionId: string) => {
+    const idempotencyKey = key('event')
+    return request<Mission>(`/api/v1/missions/${missionId}/events`, {
+      method: 'POST',
+      headers: { ...jsonHeaders, 'Idempotency-Key': idempotencyKey },
+      body: JSON.stringify({
+        event_id: `GROUND-OUTAGE-${missionId.slice(0, 8)}`,
+        event_type: 'compound_orbital_compute_failure',
+        affected_resources: ['GS-PACIFIC-02', 'COMPUTE-SAT-07', 'COMPUTE-SAT-08'],
+        start_minute: 5,
+        expected_duration_minutes: 42,
+        confidence: 1,
+        source: 'public-sandbox-demo',
+      }),
+    })
+  },
+  clarify: (missionId: string, answer: 'urgent_deadline' | 'noncritical_downlinks') => {
+    const idempotencyKey = key('clarify')
+    return request<Mission>(
+      `/api/v1/missions/${missionId}/clarifications`,
+      mutation(idempotencyKey, { answer }),
+    )
+  },
+  plan: (missionId: string) => {
+    const idempotencyKey = key('plan')
+    return request<Mission>(`/api/v1/missions/${missionId}/plan`, mutation(idempotencyKey, {}))
+  },
+  verify: (missionId: string) => {
+    const idempotencyKey = key('verify')
+    return request<Mission>(`/api/v1/missions/${missionId}/verify`, mutation(idempotencyKey, {}))
+  },
+  apply: (missionId: string) => {
+    const idempotencyKey = key('apply')
+    return request<Mission>(`/api/v1/missions/${missionId}/apply-sandbox`, mutation(idempotencyKey, {}))
+  },
+  eventsUrl: (missionId: string) => `/api/v1/missions/${missionId}/events`,
   bundleUrl: (missionId: string) => `/api/v1/missions/${missionId}/bundle`,
+  logsUrl: (missionId: string) => `/api/v1/missions/${missionId}/logs`,
+  artifactUrl: (missionId: string, name: string) => (
+    `/api/v1/missions/${missionId}/artifacts/${encodeURIComponent(name)}`
+  ),
+}
+
+export function appendEvent(mission: Mission, event: AuditEvent): Mission {
+  if (mission.audit.some((existing) => existing.event_id === event.event_id)) return mission
+  return { ...mission, audit: [...mission.audit, event].sort((a, b) => a.sequence - b.sequence) }
 }

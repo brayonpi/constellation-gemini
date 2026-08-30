@@ -4,8 +4,6 @@ import json
 import re
 from typing import Any
 
-from pydantic import TypeAdapter, ValidationError
-
 from .digests import sha256_digest
 from .models import Constraint, MissionIntent
 
@@ -68,6 +66,10 @@ def canonicalize_intent(
     priority_choice: str | None = None,
     live_interpretation: bool = False,
     extracted: dict[str, Any] | None = None,
+    interaction_id: str | None = None,
+    duration_ms: int | None = None,
+    usage_metadata: dict[str, Any] | None = None,
+    fallback_reason: str | None = None,
 ) -> MissionIntent:
     """Compile model output into a canonical intent and fail closed on semantic drift.
 
@@ -84,10 +86,6 @@ def canonicalize_intent(
         if unexpected:
             raise SemanticCompilationError(f"unexpected model fields: {sorted(unexpected)}")
         candidate = {**expected, **extracted}
-        try:
-            TypeAdapter(dict[str, Any]).validate_python(candidate)
-        except ValidationError as exc:
-            raise SemanticCompilationError(str(exc)) from exc
         # A live model may reorder prose-derived lists; canonical ordering removes presentation drift.
         for field in ("required_obligations", "hard_constraints", "soft_preferences", "accepted_defaults"):
             if field in candidate:
@@ -108,6 +106,10 @@ def canonicalize_intent(
         canonical_digest=digest,
         gemini_model_id=model_id,
         live_interpretation=live_interpretation,
+        interaction_id=interaction_id,
+        duration_ms=duration_ms,
+        usage_metadata=usage_metadata or {},
+        fallback_reason=fallback_reason,
     )
 
 
