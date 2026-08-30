@@ -8,6 +8,7 @@ RUN npm run build
 FROM python:3.12-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PORT=8080 \
     CONSTELLATION_DATABASE_PATH=/tmp/constellation.sqlite3 \
+    CONSTELLATION_FIXTURE_DIR=/app/data/fixtures \
     CONSTELLATION_WEB_DIST=/app/apps/web/dist
 WORKDIR /app
 COPY pyproject.toml README.md LICENSE ./

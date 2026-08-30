@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from .digests import sha256_digest
 from .models import OrbitalFleetSnapshot
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-FIXTURE_DIR = REPO_ROOT / "data" / "fixtures"
+FIXTURE_DIR = Path(
+    os.getenv("CONSTELLATION_FIXTURE_DIR", Path.cwd() / "data" / "fixtures")
+).resolve()
 
 
 def load_snapshot(name: str = "demo-12") -> OrbitalFleetSnapshot:

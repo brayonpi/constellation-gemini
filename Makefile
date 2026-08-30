@@ -13,11 +13,13 @@ help:
 	@echo "docker       Build the production container"
 
 install:
-	python3 -m pip install -e '.[dev,google]'
+	python3 -m venv .venv
+	.venv/bin/python -m pip install --upgrade pip
+	.venv/bin/python -m pip install -e '.[dev,google]'
 	cd apps/web && npm install
 
 api:
-	PYTHONPATH=apps/api uvicorn constellation.main:app --reload --port 8080
+	PYTHONPATH=apps/api .venv/bin/uvicorn constellation.main:app --reload --port 8080
 
 web:
 	cd apps/web && npm run dev
@@ -26,15 +28,15 @@ dev:
 	./scripts/dev.sh
 
 test:
-	python3 -m pytest
+	.venv/bin/python -m pytest
 	cd apps/web && npm run typecheck && npm run test
 
 lint:
-	python3 -m ruff check apps tests
+	.venv/bin/python -m ruff check apps tests scripts
 	cd apps/web && npm run lint
 
 verify-demo:
-	PYTHONPATH=apps/api python3 -m constellation.cli verify data/fixtures/recovered-plan.json
+	PYTHONPATH=apps/api .venv/bin/python -m constellation.cli verify data/fixtures/recovered-plan.json
 
 docker:
 	docker build -t constellation:local .
