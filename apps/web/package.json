@@ -14,7 +14,7 @@
   "dependencies": {
     "@react-three/fiber": "^9.3.0",
     "@types/three": "^0.180.0",
-    "@vitejs/plugin-react": "^5.0.4",
+    "@vitejs/plugin-react": "^6.1.1",
     "lucide-react": "^0.544.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
