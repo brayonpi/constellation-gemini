@@ -31,7 +31,7 @@ google = [
 dev = [
   "pytest>=9.0.3,<10",
   "pytest-asyncio>=1.1,<2",
-  "pytest-cov>=6.2,<7",
+  "pytest-cov>=6.2,<8",
   "pip-audit>=2.9,<3",
   "ruff>=0.12,<1",
 ]
