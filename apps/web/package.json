@@ -12,7 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@react-three/fiber": "^9.3.0",
+    "@react-three/fiber": "^9.7.0",
     "@types/three": "^0.180.0",
     "@vitejs/plugin-react": "^5.0.4",
     "lucide-react": "^0.544.0",
