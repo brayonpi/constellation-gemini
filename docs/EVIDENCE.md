@@ -22,4 +22,4 @@ It does not establish general language understanding or paraphrase invariance.
 Operational latency displayed in the interface describes only that observed request.
 It is not a benchmark, acceleration claim, or comparison with another system.
 
-> **BRAYON PIESKE** — *"Engineering earns trust when every claim is testable and every release is verified."*
+> **BRAYON PIESKE** | *"Engineering earns trust when every claim is testable and every release is verified."*

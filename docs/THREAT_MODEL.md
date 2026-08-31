@@ -39,4 +39,4 @@ No repository tool can invoke spacecraft, stations, or an external mission-contr
 
 Physical orbital threat analysis, spacecraft command authentication, radiation effects, collision avoidance, and safety-critical certification are outside this research prototype.
 
-> **BRAYON PIESKE** — *"Engineering earns trust when every claim is testable and every release is verified."*
+> **BRAYON PIESKE** | *"Engineering earns trust when every claim is testable and every release is verified."*

@@ -10,6 +10,8 @@ def enqueue_plan(
     mission_id: str,
     idempotency_key: str,
     target_base_url: str,
+    *,
+    local_simulation: bool = False,
 ) -> str:
     """Create a durable, authenticated Cloud Task for mission planning."""
     if not settings.google_cloud_project or not settings.task_service_account:
@@ -25,7 +27,13 @@ def enqueue_plan(
             "http_method": tasks_v2.HttpMethod.POST,
             "url": f"{target_base_url.rstrip('/')}/internal/tasks/plan",
             "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"mission_id": mission_id, "idempotency_key": idempotency_key}).encode(),
+            "body": json.dumps(
+                {
+                    "mission_id": mission_id,
+                    "idempotency_key": idempotency_key,
+                    "local_simulation": local_simulation,
+                }
+            ).encode(),
             "oidc_token": {
                 "service_account_email": settings.task_service_account,
                 "audience": target_base_url.rstrip("/"),

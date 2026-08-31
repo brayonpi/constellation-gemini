@@ -137,7 +137,7 @@ def main() -> None:
         "jobs": jobs,
         "existing_schedule": nominal,
         "dataset_provenance": {
-            "name": "Google Borg ClusterData 2019 — committed demonstration slice",
+            "name": "Google Borg ClusterData 2019, committed demonstration slice",
             "source_url": "https://github.com/google/cluster-data",
             "license": "CC BY 4.0",
             "version": "clusterdata-2019; synthetic committed fixture pending BigQuery extraction",

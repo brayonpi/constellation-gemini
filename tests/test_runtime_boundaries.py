@@ -64,7 +64,18 @@ def test_cloud_task_contract_uses_oidc_and_private_worker(monkeypatch) -> None:
     request = captured["task"]["http_request"]
     assert request["url"] == "https://worker.example/internal/tasks/plan"
     assert request["oidc_token"]["audience"] == "https://worker.example"
-    assert json.loads(request["body"])["mission_id"] == "mission-1"
+    body = json.loads(request["body"])
+    assert body["mission_id"] == "mission-1"
+    assert body["local_simulation"] is False
+
+    enqueue_plan(
+        settings,
+        "mission-1",
+        "idempotency-2",
+        "https://worker.example/",
+        local_simulation=True,
+    )
+    assert json.loads(captured["task"]["http_request"]["body"])["local_simulation"] is True
 
 
 def test_cloud_task_requires_project_and_service_account() -> None:

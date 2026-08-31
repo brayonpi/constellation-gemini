@@ -37,6 +37,7 @@ from .store import (
     MissionStore,
     StoreProtocol,
 )
+from .telemetry import capture_run_telemetry
 from .verifier import qap_cost, verify_mission
 
 
@@ -255,9 +256,22 @@ class MissionService:
         )
         return self._save(mission)
 
-    async def plan(self, mission_id: str, idempotency_key: str) -> MissionRecord:
+    async def plan(
+        self,
+        mission_id: str,
+        idempotency_key: str,
+        *,
+        local_simulation: bool = False,
+    ) -> MissionRecord:
+        planning_started = time.perf_counter()
+        verifier_wall_time_ms: int | None = None
         mission = self._get(mission_id)
-        self._claim(mission, "plan", idempotency_key, {"mission_id": mission_id})
+        self._claim(
+            mission,
+            "plan",
+            idempotency_key,
+            {"mission_id": mission_id, "local_simulation": local_simulation},
+        )
         if mission.status in {MissionStatus.VERIFIED, MissionStatus.APPLIED} and mission.plan:
             return mission
         retryable = {
@@ -271,18 +285,38 @@ class MissionService:
         if mission.status not in retryable or not mission.intent:
             raise InvalidTransition("mission must have resolved intent before planning")
 
+        if local_simulation or not self.settings.live_cortex_available:
+            mission.execution_mode = ExecutionMode.LOCAL_DETERMINISTIC
+        if local_simulation:
+            self._audit(
+                mission,
+                "simulation.selected",
+                "The operator selected transparent deterministic simulation after the live request stopped",
+                component="local-simulator",
+                status="completed",
+            )
+            self._save(mission)
+
         if mission.intent.objective_order[1:2] == ["noncritical_downlinks"]:
             mission.status = MissionStatus.CONTRACT_REJECTED
             self._audit(
                 mission,
                 "contract.unsupported_priority",
                 (
-                    "The lower-priority-download choice was honored, but this golden scenario cannot "
+                    "The lower priority download choice was honored, but this golden scenario cannot "
                     "prove that every previously computed output is available; search and action stopped"
                 ),
                 component="mission-coordinator",
                 status="failed",
                 unsupported_constraint="preserve_all_noncritical_downlinks",
+            )
+            mission.runtime_telemetry = capture_run_telemetry(
+                planning_started=planning_started,
+                verifier_wall_time_ms=None,
+                cover_round_trip_ms=None,
+                qap_round_trip_ms=None,
+                candidate_bundle_count=0,
+                execution_mode=mission.execution_mode,
             )
             return self._save(mission)
 
@@ -299,7 +333,7 @@ class MissionService:
         self._audit(
             mission,
             "bundles.generated",
-            "Pre-checked schedule pieces created deterministically",
+            "Prechecked schedule pieces created deterministically",
             component="mission-kernel",
             status="completed",
             output_digest=sha256_digest(mission.bundles),
@@ -311,11 +345,23 @@ class MissionService:
         mission.status = MissionStatus.CORTEX_COVER
         self._audit(
             mission,
-            "cortex.cover.submitted",
-            "Complete-plan search sent to HexStellar Cortex"
-            if self.settings.live_cortex_available
-            else "Live Cortex is not configured; bounded local execution is explicitly selected",
-            component="cortex-adapter",
+            (
+                "simulation.cover.started"
+                if mission.execution_mode == ExecutionMode.LOCAL_DETERMINISTIC
+                else "cortex.cover.submitted"
+            ),
+            "Transparent deterministic simulation started"
+            if local_simulation
+            else (
+                "Complete plan search sent to HexStellar Cortex"
+                if self.settings.live_cortex_available
+                else "Live Cortex is not configured; bounded local execution is explicitly selected"
+            ),
+            component=(
+                "local-simulator"
+                if mission.execution_mode == ExecutionMode.LOCAL_DETERMINISTIC
+                else "cortex-adapter"
+            ),
             status="started",
             input_digest=sha256_digest(contract),
             live=self.settings.live_cortex_available,
@@ -327,6 +373,8 @@ class MissionService:
         receipts: list[CortexReceipt]
         certainty: str
         try:
+            if mission.execution_mode == ExecutionMode.LOCAL_DETERMINISTIC:
+                raise CortexUnavailable("operator selected transparent deterministic simulation")
             cortex_result = await self.cortex.solve(
                 "cover",
                 contract,
@@ -358,11 +406,19 @@ class MissionService:
                     response_digest=sha256_digest(response),
                     latency_ms=cortex_result.latency_ms,
                     retry_count=cortex_result.retry_count,
+                    engine_elapsed_ms=self._metric_int(response, "elapsed_ms"),
+                    engine_peak_rss_kb=self._metric_int(response, "peak_rss_kb"),
+                    compute_units=self._metric_float(response, "compute_units"),
+                    observability=(
+                        response["observability"]
+                        if isinstance(response.get("observability"), dict)
+                        else {}
+                    ),
                 )
             ]
             mission.execution_mode = ExecutionMode.LIVE
         except CortexUnavailable as exc:
-            if self.settings.live_cortex_available:
+            if self.settings.live_cortex_available and not local_simulation:
                 mission.status = MissionStatus.CORTEX_UNAVAILABLE
                 self._audit(
                     mission,
@@ -372,6 +428,14 @@ class MissionService:
                     status="failed",
                     input_digest=sha256_digest(contract),
                     error=str(exc),
+                )
+                mission.runtime_telemetry = capture_run_telemetry(
+                    planning_started=planning_started,
+                    verifier_wall_time_ms=None,
+                    cover_round_trip_ms=None,
+                    qap_round_trip_ms=None,
+                    candidate_bundle_count=len(mission.bundles),
+                    execution_mode=mission.execution_mode,
                 )
                 return self._save(mission)
             selected_indices, uncovered = deterministic_cover(mission.bundles, mission.intent)
@@ -390,14 +454,26 @@ class MissionService:
                 error=str(exc),
             )
             self._save(mission)
+            mission.runtime_telemetry = capture_run_telemetry(
+                planning_started=planning_started,
+                verifier_wall_time_ms=None,
+                cover_round_trip_ms=None,
+                qap_round_trip_ms=None,
+                candidate_bundle_count=len(mission.bundles),
+                execution_mode=mission.execution_mode,
+            )
+            self._save(mission)
             return mission
 
         selected = [mission.bundles[index] for index in selected_indices]
+        local_cover = mission.execution_mode == ExecutionMode.LOCAL_DETERMINISTIC
         self._audit(
             mission,
-            "cortex.cover.received",
-            "Cortex returned a candidate; its contract fields were checked again",
-            component="cortex-adapter",
+            "simulation.cover.completed" if local_cover else "cortex.cover.received",
+            "The deterministic simulation returned a candidate for independent checking"
+            if local_cover
+            else "Cortex returned a candidate; its contract fields were checked again",
+            component="local-simulator" if local_cover else "cortex-adapter",
             status="completed",
             output_digest=sha256_digest(selected_indices),
             retry_count=receipts[0].retry_count,
@@ -412,6 +488,8 @@ class MissionService:
         qap_answer: list[int] | None = None
         qap_reported_cost: int | None = None
         try:
+            if mission.execution_mode == ExecutionMode.LOCAL_DETERMINISTIC:
+                raise CortexUnavailable("operator selected transparent deterministic simulation")
             qap_result = await self.cortex.solve(
                 "qap",
                 topology,
@@ -440,10 +518,18 @@ class MissionService:
                             response_digest=sha256_digest(qap_response),
                             latency_ms=qap_result.latency_ms,
                             retry_count=qap_result.retry_count,
+                            engine_elapsed_ms=self._metric_int(qap_response, "elapsed_ms"),
+                            engine_peak_rss_kb=self._metric_int(qap_response, "peak_rss_kb"),
+                            compute_units=self._metric_float(qap_response, "compute_units"),
+                            observability=(
+                                qap_response["observability"]
+                                if isinstance(qap_response.get("observability"), dict)
+                                else {}
+                            ),
                         )
                     )
         except CortexUnavailable as exc:
-            if self.settings.live_cortex_available:
+            if self.settings.live_cortex_available and not local_simulation:
                 self._audit(
                     mission,
                     "topology.refinement_rejected",
@@ -471,7 +557,11 @@ class MissionService:
             "Optional compute placement cost checked independently"
             if qap_answer
             else "Valid schedule kept without optional compute placement",
-            component="cortex-adapter",
+            component=(
+                "local-simulator"
+                if mission.execution_mode == ExecutionMode.LOCAL_DETERMINISTIC
+                else "cortex-adapter"
+            ),
             status="completed" if qap_answer else "info",
             output_digest=sha256_digest(qap_answer) if qap_answer else None,
         )
@@ -502,6 +592,14 @@ class MissionService:
                 status="failed",
                 uncovered=uncovered,
             )
+            mission.runtime_telemetry = capture_run_telemetry(
+                planning_started=planning_started,
+                verifier_wall_time_ms=None,
+                cover_round_trip_ms=receipts[0].latency_ms if receipts else None,
+                qap_round_trip_ms=(receipts[1].latency_ms if len(receipts) > 1 else None),
+                candidate_bundle_count=len(mission.bundles),
+                execution_mode=mission.execution_mode,
+            )
             self._materialize_artifacts(mission)
             return self._save(mission)
 
@@ -509,11 +607,12 @@ class MissionService:
         self._audit(
             mission,
             "verification.started",
-            "Separate minute-by-minute plan check started",
+            "Separate minute by minute plan check started",
             component="independent-verifier",
             status="started",
         )
         self._save(mission)
+        verifier_started = time.perf_counter()
         mission.plan.verification_report = verify_mission(
             snapshot=mission.snapshot,
             intent=mission.intent,
@@ -521,6 +620,7 @@ class MissionService:
             bundles=mission.bundles,
             plan=mission.plan,
         )
+        verifier_wall_time_ms = round((time.perf_counter() - verifier_started) * 1000)
         report = mission.plan.verification_report
         if report.verified:
             mission.status = MissionStatus.VERIFIED
@@ -543,8 +643,49 @@ class MissionService:
                 status="failed",
                 issues=[issue.model_dump(mode="json") for issue in report.issues],
             )
+        mission.runtime_telemetry = capture_run_telemetry(
+            planning_started=planning_started,
+            verifier_wall_time_ms=verifier_wall_time_ms,
+            cover_round_trip_ms=receipts[0].latency_ms if receipts else None,
+            qap_round_trip_ms=(receipts[1].latency_ms if len(receipts) > 1 else None),
+            candidate_bundle_count=len(mission.bundles),
+            execution_mode=mission.execution_mode,
+        )
+        self._audit(
+            mission,
+            "telemetry.captured",
+            "Run time and worker memory scope recorded without benchmark claims",
+            component="runtime-telemetry",
+            status="completed",
+            duration_ms=mission.runtime_telemetry.planning_wall_time_ms,
+            process_peak_rss_mb=mission.runtime_telemetry.process_peak_rss_mb,
+            rss_scope=mission.runtime_telemetry.process_peak_rss_scope,
+            verifier_wall_time_ms=verifier_wall_time_ms,
+        )
         self._materialize_artifacts(mission)
         return self._save(mission)
+
+    @staticmethod
+    def _metric_int(response: dict[str, Any], field: str) -> int | None:
+        value = response.get(field)
+        if value is None or isinstance(value, bool):
+            return None
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            return None
+        return parsed if parsed >= 0 else None
+
+    @staticmethod
+    def _metric_float(response: dict[str, Any], field: str) -> float | None:
+        value = response.get(field)
+        if value is None or isinstance(value, bool):
+            return None
+        try:
+            parsed = float(value)
+        except (TypeError, ValueError):
+            return None
+        return parsed if parsed >= 0 else None
 
     @staticmethod
     def _local_receipt(mission: MissionRecord, command: str, contract: dict[str, Any], reason: str) -> CortexReceipt:
@@ -565,9 +706,21 @@ class MissionService:
             latency_ms=0,
         )
 
-    def mark_queued(self, mission_id: str, task_name: str, idempotency_key: str) -> MissionRecord:
+    def mark_queued(
+        self,
+        mission_id: str,
+        task_name: str,
+        idempotency_key: str,
+        *,
+        local_simulation: bool = False,
+    ) -> MissionRecord:
         mission = self._get(mission_id)
-        self._claim(mission, "queue", idempotency_key, {"mission_id": mission_id})
+        self._claim(
+            mission,
+            "queue",
+            idempotency_key,
+            {"mission_id": mission_id, "local_simulation": local_simulation},
+        )
         if mission.status == MissionStatus.PLANNING:
             return mission
         retryable = {
@@ -582,10 +735,16 @@ class MissionService:
         mission.status = MissionStatus.PLANNING
         self._audit(
             mission,
-            "planning.requeued" if is_retry else "planning.queued",
-            "Cloud Tasks scheduled a safe worker retry"
-            if is_retry
-            else "Cloud Tasks scheduled the recovery worker",
+            "simulation.queued"
+            if local_simulation
+            else ("planning.requeued" if is_retry else "planning.queued"),
+            "Transparent deterministic simulation was scheduled"
+            if local_simulation
+            else (
+                "Cloud Tasks scheduled a safe worker retry"
+                if is_retry
+                else "Cloud Tasks scheduled the recovery worker"
+            ),
             component="cloud-tasks",
             status="completed",
             task_name=task_name,
@@ -598,15 +757,28 @@ class MissionService:
         self._claim(mission, "verify", idempotency_key, {"mission_id": mission_id})
         if not mission.intent or not mission.plan:
             raise InvalidTransition("mission has no plan to verify")
-        mission.plan.verification_report = verify_mission(
+        was_applied = mission.status == MissionStatus.APPLIED
+        report = verify_mission(
             snapshot=mission.snapshot,
             intent=mission.intent,
             events=mission.telemetry,
             bundles=mission.bundles,
             plan=mission.plan,
         )
+        previous_report = mission.plan.verification_report
+        report_unchanged = bool(previous_report) and previous_report.model_dump(
+            exclude={"verified_at"}
+        ) == report.model_dump(exclude={"verified_at"})
+        if report_unchanged and mission.status in {
+            MissionStatus.VERIFIED,
+            MissionStatus.APPLIED,
+        }:
+            return mission
+        mission.plan.verification_report = report
         mission.status = (
-            MissionStatus.VERIFIED if mission.plan.verification_report.verified else MissionStatus.VERIFICATION_FAILED
+            MissionStatus.APPLIED
+            if report.verified and was_applied
+            else (MissionStatus.VERIFIED if report.verified else MissionStatus.VERIFICATION_FAILED)
         )
         return self._save(mission)
 

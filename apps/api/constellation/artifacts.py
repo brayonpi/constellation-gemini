@@ -31,6 +31,16 @@ def _zip_bytes(files: dict[str, bytes]) -> bytes:
     return buffer.getvalue()
 
 
+def _content_type(name: str) -> str:
+    if name.endswith(".ndjson"):
+        return "application/x-ndjson"
+    if name.endswith(".md"):
+        return "text/markdown"
+    if name.endswith(".py"):
+        return "text/x-python"
+    return "application/json"
+
+
 class ArtifactStore:
     """Writes immutable mission evidence locally and, when configured, to Cloud Storage."""
 
@@ -127,9 +137,13 @@ def build_mission_artifacts(settings: Settings, mission: MissionRecord) -> list[
             if mission.plan and mission.plan.verification_report
             else None
         ),
+        "runtime-telemetry.json": _json_bytes(
+            mission.runtime_telemetry.model_dump(mode="json") if mission.runtime_telemetry else None
+        ),
         "mission-patch.json": _json_bytes(patch),
         "events.ndjson": "".join(canonical_json(event) + "\n" for event in mission.audit).encode(),
         "AI-REVIEW-PROMPT.md": AI_REVIEW_PROMPT.encode(),
+        "VERIFIER-SOURCE.py": Path(__file__).with_name("verifier.py").read_bytes(),
     }
     checksums = {name: _bytes_digest(content) for name, content in sorted(files.items())}
     files["checksums.json"] = _json_bytes(checksums)
@@ -140,11 +154,7 @@ def build_mission_artifacts(settings: Settings, mission: MissionRecord) -> list[
             mission.id,
             name,
             content,
-            "application/x-ndjson"
-            if name.endswith(".ndjson")
-            else "text/markdown"
-            if name.endswith(".md")
-            else "application/json",
+            _content_type(name),
             "Constellation runtime",
         )
         for name, content in files.items()

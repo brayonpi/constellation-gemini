@@ -184,6 +184,38 @@ class CortexReceipt(StrictModel):
     response_digest: str | None = None
     latency_ms: int | None = Field(None, ge=0)
     retry_count: int = Field(0, ge=0)
+    engine_elapsed_ms: int | None = Field(None, ge=0)
+    engine_peak_rss_kb: int | None = Field(None, ge=0)
+    compute_units: float | None = Field(None, ge=0)
+    observability: dict[str, Any] = Field(default_factory=dict)
+
+
+class RunTelemetry(StrictModel):
+    """Operational measurements for one planning attempt.
+
+    These values describe the Constellation worker process and observed API
+    round trips. They are deliberately not described as Cortex server memory,
+    algorithm-only time, or a reproducible benchmark.
+    """
+
+    planning_wall_time_ms: int = Field(ge=0)
+    verifier_wall_time_ms: int | None = Field(None, ge=0)
+    cover_round_trip_ms: int | None = Field(None, ge=0)
+    qap_round_trip_ms: int | None = Field(None, ge=0)
+    process_peak_rss_mb: float = Field(ge=0)
+    process_peak_rss_scope: Literal["worker_process_peak_since_start"] = (
+        "worker_process_peak_since_start"
+    )
+    candidate_bundle_count: int = Field(ge=0)
+    execution_mode: Literal[
+        "live", "local_deterministic", "offline_precomputed", "degraded_fixture"
+    ]
+    runtime_platform: str
+    measured_at: datetime = Field(default_factory=utc_now)
+    measurement_note: str = (
+        "Operational telemetry for this run; not a benchmark. RSS is the worker "
+        "process peak since start and does not measure the remote Cortex service."
+    )
 
 
 class VerificationIssue(StrictModel):
@@ -288,6 +320,7 @@ class MissionRecord(StrictModel):
     telemetry: list[TelemetryEvent] = Field(default_factory=list)
     bundles: list[CandidateBundle] = Field(default_factory=list)
     plan: MissionPlan | None = None
+    runtime_telemetry: RunTelemetry | None = None
     audit: list[AuditEvent] = Field(default_factory=list)
     artifacts: list[ArtifactManifest] = Field(default_factory=list)
     version: int = Field(0, ge=0)

@@ -152,6 +152,17 @@ def health_ready(response: Response) -> dict:
     return {"status": "ready" if not failures else "degraded", "failures": failures}
 
 
+@app.get("/api/v1/verifier-source")
+def verifier_source():
+    """Expose the exact independent checker shipped in this deployment."""
+    content = Path(__file__).with_name("verifier.py").read_text(encoding="utf-8")
+    return Response(
+        content=content,
+        media_type="text/x-python",
+        headers={"Content-Disposition": 'inline; filename="constellation-verifier.py"'},
+    )
+
+
 def _idempotency(header_value: str | None, body_value: str) -> str:
     return header_value or body_value
 
@@ -194,8 +205,13 @@ async def clarify(
     return await service().clarify(mission_id, request)
 
 
-async def _background_plan(mission_id: str, idempotency_key: str) -> None:
-    await service().plan(mission_id, idempotency_key)
+async def _background_plan(
+    mission_id: str,
+    idempotency_key: str,
+    *,
+    local_simulation: bool = False,
+) -> None:
+    await service().plan(mission_id, idempotency_key, local_simulation=local_simulation)
 
 
 @app.post("/api/v1/missions/{mission_id}/plan", status_code=202)
@@ -214,6 +230,49 @@ async def plan(
         return service().mark_queued(mission_id, task_name, key)
     queued = service().mark_queued(mission_id, f"local-background:{uuid.uuid4()}", key)
     background_tasks.add_task(_background_plan, mission_id, key)
+    return queued
+
+
+@app.post("/api/v1/missions/{mission_id}/simulate", status_code=202)
+async def simulate_after_cortex_failure(
+    mission_id: str,
+    request: MutationRequest,
+    background_tasks: BackgroundTasks,
+    idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
+):
+    """Run the disclosed deterministic simulator only after a visible live Cortex failure."""
+    key = _idempotency(idempotency_key, request.idempotency_key)
+    if service().get(mission_id).status != "cortex_unavailable":
+        raise InvalidTransition("transparent simulation is available only after a live Cortex failure")
+    settings = get_settings()
+    if settings.mode == "cloud" and settings.role == "web":
+        if not settings.worker_base_url:
+            raise HTTPException(status_code=503, detail="private worker URL is not configured")
+        task_name = enqueue_plan(
+            settings,
+            mission_id,
+            key,
+            settings.worker_base_url,
+            local_simulation=True,
+        )
+        return service().mark_queued(
+            mission_id,
+            task_name,
+            key,
+            local_simulation=True,
+        )
+    queued = service().mark_queued(
+        mission_id,
+        f"local-simulation:{uuid.uuid4()}",
+        key,
+        local_simulation=True,
+    )
+    background_tasks.add_task(
+        _background_plan,
+        mission_id,
+        key,
+        local_simulation=True,
+    )
     return queued
 
 
@@ -414,7 +473,11 @@ async def task_plan(
     internal_token: str | None = Header(None, alias="X-Constellation-Internal-Token"),
 ):
     _require_internal(internal_token)
-    mission = await service().plan(str(payload["mission_id"]), str(payload["idempotency_key"]))
+    mission = await service().plan(
+        str(payload["mission_id"]),
+        str(payload["idempotency_key"]),
+        local_simulation=payload.get("local_simulation") is True,
+    )
     return {"mission_id": mission.id, "status": mission.status}
 
 

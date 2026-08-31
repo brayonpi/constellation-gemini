@@ -38,6 +38,23 @@ async def test_full_workflow_verifies_and_applies(mission_service: MissionServic
     assert mission.plan and mission.plan.verification_report
     assert mission.plan.verification_report.verified
     assert mission.plan.compute_placement is not None
+    assert mission.runtime_telemetry
+    assert mission.runtime_telemetry.candidate_bundle_count == len(mission.bundles)
+    assert mission.runtime_telemetry.process_peak_rss_mb > 0
+    assert mission.runtime_telemetry.verifier_wall_time_ms is not None
+    assert any(
+        event.type == "simulation.cover.started" and event.component == "local-simulator"
+        for event in mission.audit
+    )
+    assert any(
+        event.type == "simulation.cover.completed" and event.component == "local-simulator"
+        for event in mission.audit
+    )
+    assert all(
+        event.component == "local-simulator"
+        for event in mission.audit
+        if event.type == "topology.refined"
+    )
     applied = mission_service.apply(mission.id)
     assert applied.status == "applied"
     assert applied.plan and applied.plan.apply_status == "applied_to_sandbox"

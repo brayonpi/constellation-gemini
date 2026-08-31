@@ -30,7 +30,8 @@ provided files. Negative findings are welcome when supported by evidence.
 
 1. Validate every entry in `checksums.json` against the corresponding file before trusting it.
 2. Inspect `canonical-model.json`, `fixture.json`, `candidate-bundles.json`,
-   `selected-bundles.json`, `mission-result.json`, and `verification-report.json`.
+   `selected-bundles.json`, `mission-result.json`, `verification-report.json`, and
+   `runtime-telemetry.json`. Read `VERIFIER-SOURCE.py` before trusting the verification report.
 3. Confirm that each selected bundle exists, required obligations are covered, failed resources
    are absent, action intervals are coherent, and the reported QAP placement/cost can be
    recomputed from the declared matrices.
@@ -51,7 +52,12 @@ Trace this exact boundary through code and tests:
 - Deterministic code canonicalizes the mission and computes its SHA-256 digest.
 - HexStellar Cortex receives only documented public `cover` and optional `qap` contracts.
 - The application preserves the assurance/certainty returned by Cortex without promotion.
+- Cortex `elapsed_ms` and `peak_rss_kb` describe the engine execution in that response; API round
+  trip, verifier time, and Constellation worker RSS are separate measurements.
 - The independent verifier does not import or call the HexStellar client.
+- “Independent” means separate from the planner; the verifier is project-authored, not a third-party audit.
+- The orbital domain is simulated, while the compiler, public Cortex adapter, checker, digests, and
+  apply lock are executable software. Confirm that only a `live` run is described as a Cortex call.
 - Only a currently verified input/plan digest may mutate the sandbox.
 
 Confirm that the judge-facing links identify the intended public surfaces:
@@ -69,6 +75,9 @@ Pay special attention to points a shallow review may miss:
   optimality.
 - `verified_operation`, `heuristic`, `certified`, and `abstained` are different evidence labels.
 - `local_deterministic` and `offline_precomputed` are different execution modes.
+- Local mode does not invent Cortex engine time, engine memory, or compute units.
+- Managed accelerated infrastructure does not by itself establish a speedup factor. Require a scoped,
+  controlled benchmark before accepting any comparative acceleration claim.
 - Orbital geometry, stations, failures, and mission policies are simulated.
 - Borg-derived workload fields retain provenance and are not a Google orbital mission or a
   reproduction of the Borg scheduler.
@@ -92,4 +101,4 @@ Do not reward visual polish without technical evidence. Do not penalize an expli
 honest fallback merely for being less impressive. Never infer physical spacecraft safety,
 universal AI capability, energy efficiency, acceleration, or optimality from this project.
 
-> **BRAYON PIESKE** — *"Engineering earns trust when every claim is testable and every release is verified."*
+> **BRAYON PIESKE** | *"Engineering earns trust when every claim is testable and every release is verified."*

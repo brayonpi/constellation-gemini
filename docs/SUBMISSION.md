@@ -16,10 +16,14 @@ Source: [All Things Agentic official rules](https://allthingsagentichackathon.de
 - [ ] Architecture diagram, local instructions, cloud instructions, and verifier command work.
 - [ ] Non-affiliation and pre-existing Cortex disclosures remain visible.
 - [ ] No decorative third-party logos or implied endorsement.
+- [ ] Creator identification is limited to Brayon Pieske and public professional links for HexStellar, TrustCarbon, and LinkedIn.
+- [ ] TrustCarbon is identified only as a founder link, not a sponsor, dependency, or hackathon technology.
+- [ ] Decide whether to remove the unrelated TrustCarbon link to eliminate any possible third party advertising interpretation under the official rules.
+- [ ] No personal email address or telephone number is published in the application.
 - [ ] Exact submitted commit is tagged and frozen before the deadline.
 - [ ] Post-deadline work happens only outside the submitted frozen artifact.
 - [ ] [Release inventory](RELEASE_INVENTORY.md) and [release audit](RELEASE_AUDIT.md) match the frozen commit.
 
 The repository remains private until every release blocker in [RELEASE_AUDIT.md](RELEASE_AUDIT.md) is closed and the owner explicitly authorizes publication.
 
-> **BRAYON PIESKE** — *"Engineering earns trust when every claim is testable and every release is verified."*
+> **BRAYON PIESKE** | *"Engineering earns trust when every claim is testable and every release is verified."*

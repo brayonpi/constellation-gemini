@@ -16,7 +16,7 @@ describe('Timeline', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'send data on SAT-01, minute 12 to 20' }))
     expect(screen.getByText('REC-01')).toBeTruthy()
-    expect(screen.getByText('12–20 min')).toBeTruthy()
+    expect(screen.getByText('12 to 20 min')).toBeTruthy()
     expect(screen.getAllByText('GS-01')).toHaveLength(2)
     fireEvent.click(screen.getByRole('button', { name: 'Close' }))
     expect(screen.queryByText('REC-01')).toBeNull()

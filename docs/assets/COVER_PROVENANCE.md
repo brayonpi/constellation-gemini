@@ -2,7 +2,7 @@
 
 - Created: 2026-08-30.
 - Purpose: README, application Open Graph preview, and submission thumbnail.
-- Generated layer: original orbital editorial background produced with OpenAI ImageGen.
+- Generated layer: original orbital editorial background produced during project development and used only as a non-authoritative decorative asset.
 - Deterministic layer: Constellation name, slogan, explanatory sentence, admission receipt, check labels, and layout composed in `docs/cover.html`.
 - Receipt digest: shortened display of the committed replay `plan_digest` (`a4a8e6df7d1019559f008749a9de93a0ff92a7997b3b9f1d6936bd2d5a65996b`), independently recomputed by `make verify-demo` on 2026-08-30.
 - Technical status: editorial illustration only; it is not mission evidence or orbital data.
@@ -20,4 +20,4 @@ Committed outputs:
 - `constellation-cover.webp`: compressed 16:9 composition; and
 - `docs/cover.html`: reproducible layout source.
 
-> **BRAYON PIESKE** — *"Engineering earns trust when every claim is testable and every release is verified."*
+> **BRAYON PIESKE** | *"Engineering earns trust when every claim is testable and every release is verified."*

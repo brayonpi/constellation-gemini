@@ -14,4 +14,4 @@ Report vulnerabilities privately to the repository owner rather than opening a p
 
 See [THREAT_MODEL.md](THREAT_MODEL.md) for assets, actors, abuse cases, controls, and residual risk.
 
-> **BRAYON PIESKE** — *"Engineering earns trust when every claim is testable and every release is verified."*
+> **BRAYON PIESKE** | *"Engineering earns trust when every claim is testable and every release is verified."*

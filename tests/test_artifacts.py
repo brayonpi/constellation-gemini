@@ -22,7 +22,13 @@ async def test_replay_bundle_is_self_checking_and_network_free(mission_service, 
     with zipfile.ZipFile(replay) as archive:
         names = set(archive.namelist())
         assert "AI-REVIEW-PROMPT.md" in names
+        assert "VERIFIER-SOURCE.py" in names
+        assert "runtime-telemetry.json" in names
         assert archive.read("AI-REVIEW-PROMPT.md").decode() == AI_REVIEW_PROMPT
+        assert b"def verify_mission(" in archive.read("VERIFIER-SOURCE.py")
+        runtime = json.loads(archive.read("runtime-telemetry.json"))
+        assert runtime["process_peak_rss_scope"] == "worker_process_peak_since_start"
+        assert runtime["measurement_note"].startswith("Operational telemetry for this run")
         checksums = json.loads(archive.read("checksums.json"))
         for name, expected in checksums.items():
             assert hashlib.sha256(archive.read(name)).hexdigest() == expected

@@ -49,4 +49,4 @@ Mutation requests and telemetry events are idempotent.
 The public web identity has no Vertex AI or Secret Manager permission.
 The worker owns live model and Cortex calls, while the task and Pub/Sub identities receive only Cloud Run invocation rights.
 
-> **BRAYON PIESKE** — *"Engineering earns trust when every claim is testable and every release is verified."*
+> **BRAYON PIESKE** | *"Engineering earns trust when every claim is testable and every release is verified."*

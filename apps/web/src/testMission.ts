@@ -9,6 +9,19 @@ export function testMission(): Mission {
     run_id: 'run-1',
     correlation_id: 'correlation-1',
     execution_mode: 'local_deterministic',
+    runtime_telemetry: {
+      planning_wall_time_ms: 142,
+      verifier_wall_time_ms: 4,
+      cover_round_trip_ms: 7,
+      qap_round_trip_ms: 2,
+      process_peak_rss_mb: 86.3,
+      process_peak_rss_scope: 'worker_process_peak_since_start',
+      candidate_bundle_count: 18,
+      execution_mode: 'local_deterministic',
+      runtime_platform: 'TestOS arm64 · Python 3.12.5',
+      measured_at: '2026-08-30T12:00:01Z',
+      measurement_note: 'Operational telemetry for this run; not a benchmark.',
+    },
     snapshot: {
       sha256: 'f'.repeat(64),
       horizon_minutes: 180,
@@ -62,6 +75,8 @@ export function testMission(): Mission {
       receipts: [{
         request_id: 'receipt-cover', model: 'local', certainty: 'verified_operation', effort: 'bounded',
         command: 'cover', retry_count: 0, latency_ms: 7, receipt: { scope: 'cover' },
+        engine_elapsed_ms: 3, engine_peak_rss_kb: 3072, compute_units: 0.25,
+        observability: { queue_ms: 1, compute_ms: 3, total_ms: 5 },
       }],
       verification_report: {
         verified: true,

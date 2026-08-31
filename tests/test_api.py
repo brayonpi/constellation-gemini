@@ -86,7 +86,7 @@ def test_api_idempotency_conflict(tmp_path, monkeypatch) -> None:
 
 
 def test_complete_http_workflow_exposes_timeline_logs_artifacts_and_apply(tmp_path, monkeypatch) -> None:
-    client, _ = client_for(tmp_path, monkeypatch)
+    client, mission_service = client_for(tmp_path, monkeypatch)
     mission = create(client, "workflow-create")
     mission_id = mission["id"]
 
@@ -141,12 +141,16 @@ def test_complete_http_workflow_exposes_timeline_logs_artifacts_and_apply(tmp_pa
 
     manifests = client.get(f"/api/v1/missions/{mission_id}/artifacts").json()["artifacts"]
     names = {artifact["name"] for artifact in manifests}
-    assert {"mission-replay.zip", "AI-REVIEW-PROMPT.md", "checksums.json"} <= names
+    assert {"mission-replay.zip", "AI-REVIEW-PROMPT.md", "VERIFIER-SOURCE.py", "checksums.json"} <= names
     bundle = client.get(f"/api/v1/missions/{mission_id}/bundle")
     assert bundle.status_code == 200
     assert bundle.headers["content-type"] == "application/zip"
     prompt = client.get(f"/api/v1/missions/{mission_id}/artifacts/AI-REVIEW-PROMPT.md")
     assert "skeptical software and systems engineer" in prompt.text
+    source = client.get("/api/v1/verifier-source")
+    assert source.status_code == 200
+    assert source.headers["content-type"].startswith("text/x-python")
+    assert "def verify_mission(" in source.text
     missing_artifact = client.get(f"/api/v1/missions/{mission_id}/artifacts/nope.txt")
     assert missing_artifact.status_code == 404
 
@@ -162,6 +166,25 @@ def test_complete_http_workflow_exposes_timeline_logs_artifacts_and_apply(tmp_pa
         json={"idempotency_key": "ignored-body-key"},
     )
     assert applied.json()["status"] == "applied"
+    applied_version = applied.json()["version"]
+    rechecked_after_apply = client.post(
+        f"/api/v1/missions/{mission_id}/verify",
+        headers={"Idempotency-Key": "workflow-verify-after-apply"},
+        json={"idempotency_key": "ignored-body-key"},
+    )
+    assert rechecked_after_apply.json()["status"] == "applied"
+    assert rechecked_after_apply.json()["version"] == applied_version
+    legacy = mission_service.get(mission_id)
+    assert legacy.plan and legacy.plan.verification_report
+    legacy.plan.verification_report.plan_digest = "legacy-verifier-digest"
+    legacy = mission_service.store.put(legacy, expected_version=legacy.version)
+    migrated_recheck = client.post(
+        f"/api/v1/missions/{mission_id}/verify",
+        headers={"Idempotency-Key": "workflow-verify-legacy-applied"},
+        json={"idempotency_key": "ignored-body-key"},
+    )
+    assert migrated_recheck.json()["status"] == "applied"
+    assert migrated_recheck.json()["version"] == legacy.version + 1
     patch = client.get(f"/api/v1/missions/{mission_id}/patch").json()
     assert patch["target"] == "sandbox"
     assert patch["review_required_for_external_system"] is True
@@ -266,3 +289,54 @@ def test_cloud_retry_is_requeued_on_private_worker(tmp_path, monkeypatch) -> Non
     assert response.json()["status"] == "planning"
     assert dispatched == [(mission_id, "cloud-retry", settings.worker_base_url)]
     assert response.json()["audit"][-1]["type"] == "planning.requeued"
+
+
+def test_explicit_simulation_is_queued_only_after_visible_cortex_failure(tmp_path, monkeypatch) -> None:
+    client, mission_service = client_for(tmp_path, monkeypatch)
+    mission = create(client, "simulation-create")
+    mission_id = mission["id"]
+
+    too_early = client.post(
+        f"/api/v1/missions/{mission_id}/simulate",
+        headers={"Idempotency-Key": "simulation-too-early"},
+        json={"idempotency_key": "ignored-body-key"},
+    )
+    assert too_early.status_code == 409
+
+    client.post(
+        f"/api/v1/missions/{mission_id}/intent",
+        headers={"Idempotency-Key": "simulation-intent"},
+        json={"text": DEFAULT_OPERATOR_TEXT, "idempotency_key": "ignored-body-key"},
+    )
+    client.post(
+        f"/api/v1/missions/{mission_id}/clarifications",
+        headers={"Idempotency-Key": "simulation-clarify"},
+        json={"answer": "urgent_deadline", "idempotency_key": "ignored-body-key"},
+    )
+    persisted = mission_service.get(mission_id)
+    persisted.status = MissionStatus.CORTEX_UNAVAILABLE
+    mission_service.store.put(persisted, expected_version=persisted.version)
+
+    settings = main.get_settings()
+    settings.mode = "cloud"
+    settings.role = "web"
+    settings.worker_base_url = "https://constellation-worker.example"
+    dispatched: list[tuple[str, str, str, bool]] = []
+
+    def enqueue(settings, queued_mission_id, key, target, *, local_simulation=False):
+        dispatched.append((queued_mission_id, key, target, local_simulation))
+        return "projects/test/locations/us-central1/queues/mission-plans/tasks/simulation"
+
+    monkeypatch.setattr(main, "enqueue_plan", enqueue)
+    response = client.post(
+        f"/api/v1/missions/{mission_id}/simulate",
+        headers={"Idempotency-Key": "simulation-after-failure"},
+        json={"idempotency_key": "ignored-body-key"},
+    )
+
+    assert response.status_code == 202
+    assert response.json()["status"] == "planning"
+    assert response.json()["audit"][-1]["type"] == "simulation.queued"
+    assert dispatched == [
+        (mission_id, "simulation-after-failure", settings.worker_base_url, True)
+    ]

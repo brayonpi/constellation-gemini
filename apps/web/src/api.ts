@@ -12,6 +12,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>
 }
 
+async function textRequest(path: string): Promise<string> {
+  const response = await fetch(path)
+  if (!response.ok) throw new Error(`Request failed with HTTP ${response.status}`)
+  return response.text()
+}
+
 function mutation(idempotencyKey: string, body: Record<string, unknown>): RequestInit {
   return {
     method: 'POST',
@@ -60,10 +66,20 @@ export const api = {
     const idempotencyKey = key('plan')
     return request<Mission>(`/api/v1/missions/${missionId}/plan`, mutation(idempotencyKey, {}))
   },
+  retry: (missionId: string) => {
+    const idempotencyKey = key('retry')
+    return request<Mission>(`/api/v1/missions/${missionId}/retry`, mutation(idempotencyKey, {}))
+  },
+  simulate: (missionId: string) => {
+    const idempotencyKey = key('simulate')
+    return request<Mission>(`/api/v1/missions/${missionId}/simulate`, mutation(idempotencyKey, {}))
+  },
   verify: (missionId: string) => {
     const idempotencyKey = key('verify')
     return request<Mission>(`/api/v1/missions/${missionId}/verify`, mutation(idempotencyKey, {}))
   },
+  verifierSource: () => textRequest('/api/v1/verifier-source'),
+  verifierSourceUrl: () => '/api/v1/verifier-source',
   apply: (missionId: string) => {
     const idempotencyKey = key('apply')
     return request<Mission>(`/api/v1/missions/${missionId}/apply-sandbox`, mutation(idempotencyKey, {}))

@@ -13,11 +13,13 @@ Private helpers are reviewed with their owning module and remain visible to cove
 | `GET /api/v1/health` | Public health alias; no state | API tests | Pass locally |
 | `GET /api/v1/health/live` | Process liveness only | API and container smoke tests | Pass locally |
 | `GET /api/v1/health/ready` | Required runtime configuration; reports degraded local mode | API and container smoke tests | Pass locally; cloud dependencies pending |
+| `GET /api/v1/verifier-source` | Returns the exact Python checker deployed by this API; no mission state | API and source-content tests | Pass locally |
 | `POST /api/v1/missions` | Idempotent sandbox mission creation | API idempotency and validation tests | Pass locally |
 | `POST /api/v1/missions/{id}/intent` | Gemini/fixture interpretation; typed canonical IR | API, compiler, and agent tests | Pass locally; live Gemini pending |
 | `POST /api/v1/missions/{id}/events` | Idempotent untrusted telemetry ingestion | API and workflow tests | Pass locally |
 | `POST /api/v1/missions/{id}/clarifications` | Accepts either declared material priority and recompiles rules/digest | API, compiler, workflow, and UI tests | Pass locally; unsupported all-downlink proof stops before Cortex |
 | `POST /api/v1/missions/{id}/plan` | Creates Cloud Task in cloud mode; local background task in local mode | API, cloud contract, and workflow tests | Pass locally; deployed task pending |
+| `POST /api/v1/missions/{id}/simulate` | Allows an explicitly labeled deterministic simulation only after a visible live Cortex failure | API, service gate, cloud task, and verifier tests | Pass locally; deployed task pending |
 | `POST /api/v1/missions/{id}/retry` | Requeues only explicit safe failure states | API and state-gate tests | Pass locally; deployed task pending |
 | `POST /api/v1/missions/{id}/verify` | Replays without Gemini or Cortex | API and verifier tests | Pass locally |
 | `POST /api/v1/missions/{id}/apply-sandbox` | Transactional digest/version/status gate; sandbox only | API, concurrency, and stale-digest tests | Pass locally |
@@ -76,16 +78,17 @@ Terminal failure states are explicit: `INTERPRETATION_FAILED`, `CONTRACT_REJECTE
 | Component or module | Responsibility | Evidence | Residual risk |
 |---|---|---|---|
 | `App` | Restored mission, state-directed narrative, launch/clarify/plan/apply orchestration, and visible fail-closed alternative choice | claim test and browser E2E inspection | Full Playwright matrix pending |
-| `OrbitalGlobe` | Data-driven R3F globe, incident/recovery paths, accessible 2D/text fallback | browser and production-build inspection | Cross-device GPU matrix pending |
+| `OrbitalGlobe` | Data-driven R3F globe, Americas opening, distinct impact/isolated roles, shared-clock collision and avoidance encounters, debris chase POV, deterministic evasive maneuver, illustrative reentry, synchronized diff, full-sequence restart, manual camera takeover, context-loss recovery, unobstructed satellites without a rotating target ring or colored proximity halo, and accessible text fallback | repeated reload, timed camera-state sampling, frame-by-frame collision/safe-miss inspection, synchronized comparison inspection, manual takeover, incident-role and maneuver unit tests, all-view browser inspection, and production build | Cross-device GPU matrix pending; orbital motion is illustrative rather than verifier-authoritative |
 | `Timeline` | Horizon-derived compute/contact/resource/diff evidence | component tests and browser inspection | Mobile visual regression pending |
 | `DecisionTrace` | Filterable observable run events; no chain-of-thought | browser inspection | Cloud proxy reconnect pending |
-| `EvidenceRoom` | Receipts, checks, counterexamples, manifests, downloads | component/API tests | GCS live retrieval pending |
+| `ProofArchitecture` | Plain-language translator, Cortex, checker, simulation boundary, acceleration boundary, and chain-of-custody explanation | component tests and first-time-judge browser inspection | Hosted anonymous review pending |
+| `EvidenceRoom` | Receipts, checks, counterexamples, fresh verifier execution, exact deployed source, manifests, and downloads | component/API tests and Gemini edition browser inspection | GCS live retrieval pending |
 | `api` | Typed HTTP mutations, random idempotency keys, EventSource/download URLs | API transformation tests | Hosted rate/load tests pending |
 | `links` | Single allowlisted map for public Cortex docs, worked examples, public CLI/client, and project source | exact-URL unit tests | Constellation source remains private until release approval |
 | `types` | TypeScript projection of public mission/evidence schemas | strict TypeScript build | Generated OpenAPI types are not yet used |
 
-The main JavaScript entry chunk is approximately 233 kB minified and 74 kB gzip.
-The lazily loaded globe chunk is approximately 866 kB minified and 233 kB gzip; this is a recorded performance warning, not a hidden pass.
+The main JavaScript entry chunk is 261.48 kB minified and 81.65 kB gzip.
+The lazily loaded globe chunk is 915.97 kB minified and 246.28 kB gzip in the current audited build; this is a recorded performance warning, not a hidden pass.
 
 ## Runtime configuration
 
@@ -172,16 +175,17 @@ official Google GitHub, official Devpost, or official public HexStellar surfaces
 | Gemini absent in declared local mode | Committed structured fixture; `degraded_fixture` | Only after full verification |
 | Gemini live transport/schema failure | Typed fallback with reason and live flag; no fabricated live receipt | Only after full verification |
 | Cortex absent in declared local mode | Bounded deterministic cover; `local_deterministic` | Only after full verification |
-| Cortex configured live but unavailable | Stop at `CORTEX_UNAVAILABLE`; durable retry only | No |
+| Cortex configured live but unavailable | Stop at `CORTEX_UNAVAILABLE`; offer live retry or an explicitly selected `local_deterministic` simulation | Simulation only after full verification |
 | Cortex contract rejected | Stop at `CONTRACT_REJECTED` with persisted evidence | No |
 | Selected policy requires unmodeled prior output state | Recompile the changed rules, record the new digest, and stop before Cortex with an explicit boundary | No |
 | Mission impossible | Report uncovered obligations/counterexample | No |
 | QAP rejected or invalid | Retain valid cover result and record rejection | Cover plan only after verification |
 | Verifier failure | Preserve evidence and specific witness | No |
 | Stale mission/version/digest | `APPLY_CONFLICT` | No |
-| WebGL or motion limitation | 2D/text or reduced-motion presentation | Mission workflow unaffected |
+| Transient WebGL context loss | One automatic renderer rebuild, then a visible retry control | Mission workflow and evidence remain available |
+| WebGL unavailable or repeated context loss | Text presentation with explicit 3D retry; reduced-motion mode remains available | Mission workflow and evidence remain available |
 | Image generation unavailable | Deterministic globe/timeline remain authoritative | Mission workflow unaffected |
-| Hosted dependency outage | No hidden offline replay; committed replay is explicitly `offline_precomputed` | Replay cannot mutate live state |
+| Hosted dependency outage | No hidden offline replay; live retry and transparent simulation remain distinct; committed replay is explicitly `offline_precomputed` | Simulation only after full verification; replay cannot mutate live state |
 
 ## Test inventory
 
@@ -193,13 +197,13 @@ official Google GitHub, official Devpost, or official public HexStellar surfaces
 | Verifier and tampering | `test_verifier_counterexamples.py`, `test_runtime_boundaries.py` | Pass |
 | Artifacts and replay | `test_artifacts.py` | Pass |
 | Dataset transformation | `test_borg_transform.py` | Pass for fixture pipeline; extraction claim abstained |
-| Frontend | `App.test.tsx`, `api.test.ts`, `Timeline.test.tsx`, `Evidence.test.tsx` | Seven tests pass, including exact public-link and plain-language evidence labels |
+| Frontend | `App.test.tsx`, `api.test.ts`, `orbitalIncident.test.ts`, `Timeline.test.tsx`, `Evidence.test.tsx`, `ProofArchitecture.test.tsx` | Fourteen tests pass, including exact public links, the plain-language responsibility boundary, in-page verifier controls, impact-versus-isolation behavior, deterministic avoidance movement, and the deterministic camera sequence |
 | Static/build | Ruff, TypeScript strict, ESLint, Vite production build | Pass |
 | Supply chain | `pip-audit`, `npm audit --omit=dev` | No known published-package vulnerabilities locally |
 | Container | Production build, UID, `/health/live`, `/health/ready` | Pass locally as UID 65532 |
 | Cloud/IaC | Terraform fmt/validate, Trivy, gitleaks | CI configured; frozen-tree evidence pending |
 
-Current Python result: 62 tests passing and 90.31% statement coverage.
+Current Python result: 67 tests passing and 90.38% statement coverage.
 The separate `coverage report --fail-under=90` command is the authoritative threshold gate.
 
 ## Release disposition
@@ -207,4 +211,4 @@ The separate `coverage report --fail-under=90` command is the authoritative thre
 This inventory does not authorize publication.
 The blockers in [RELEASE_AUDIT.md](RELEASE_AUDIT.md) remain authoritative, especially live Gemini, live Cortex, applied Google Cloud infrastructure, hosted admission control, anonymous demo validation, final video, immutable evidence hashes, and explicit owner approval.
 
-> **BRAYON PIESKE** — *"Engineering earns trust when every claim is testable and every release is verified."*
+> **BRAYON PIESKE** | *"Engineering earns trust when every claim is testable and every release is verified."*

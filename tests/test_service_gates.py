@@ -149,6 +149,50 @@ async def test_configured_live_cortex_unavailability_never_fabricates_plan(setti
 
 
 @pytest.mark.asyncio
+async def test_operator_can_explicitly_select_verified_local_simulation_after_live_failure(settings) -> None:
+    settings.hexstellar_api_key = "configured-test-key"
+    service = MissionService(settings)
+    mission = service.create(CreateMissionRequest(idempotency_key="create-explicit-simulation"))
+    mission = await service.set_intent(
+        mission.id,
+        IntentRequest(text=DEFAULT_OPERATOR_TEXT, idempotency_key="intent-explicit-simulation"),
+    )
+    mission = await service.clarify(
+        mission.id,
+        ClarificationRequest(answer="urgent_deadline", idempotency_key="clarify-explicit-simulation"),
+    )
+    mission = service.add_event(mission.id, failure_event(), "event-explicit-simulation")
+
+    async def unavailable(*args, **kwargs):
+        raise CortexUnavailable("deadline exceeded")
+
+    service.cortex.solve = unavailable
+    failed = await service.plan(mission.id, "plan-explicit-simulation-live")
+    assert failed.status == MissionStatus.CORTEX_UNAVAILABLE
+    assert failed.plan is None
+
+    simulated = await service.plan(
+        mission.id,
+        "plan-explicit-simulation-local",
+        local_simulation=True,
+    )
+
+    assert simulated.status == MissionStatus.VERIFIED
+    assert simulated.execution_mode.value == "local_deterministic"
+    assert simulated.plan and simulated.plan.verification_report
+    assert simulated.plan.verification_report.verified is True
+    assert all(receipt.receipt.get("local_deterministic") is True for receipt in simulated.plan.receipts)
+    assert any(event.type == "simulation.selected" for event in simulated.audit)
+    assert any(event.type == "simulation.cover.started" for event in simulated.audit)
+    assert any(event.type == "simulation.cover.completed" for event in simulated.audit)
+    assert all(
+        event.component == "local-simulator"
+        for event in simulated.audit
+        if event.type == "topology.refined"
+    )
+
+
+@pytest.mark.asyncio
 async def test_rejected_cover_contract_is_persisted(mission_service) -> None:
     mission = mission_service.create(CreateMissionRequest(idempotency_key="create-contract-rejected"))
     mission = await mission_service.set_intent(
@@ -199,6 +243,10 @@ async def test_live_response_preserves_certainty_and_rejects_invalid_qap(mission
                     "certainty": "heuristic",
                     "request_id": "live-cover",
                     "receipt": {"scope": "cover"},
+                    "elapsed_ms": 11,
+                    "peak_rss_kb": 3072,
+                    "compute_units": 0.25,
+                    "observability": {"queue_ms": 2, "compute_ms": 11, "total_ms": 15},
                 },
                 latency_ms=17,
                 retry_count=1,
@@ -217,6 +265,10 @@ async def test_live_response_preserves_certainty_and_rejects_invalid_qap(mission
     assert result.plan and result.plan.certainty == "heuristic"
     assert result.plan.compute_placement is None
     assert result.plan.receipts[0].certainty == "heuristic"
+    assert result.plan.receipts[0].engine_elapsed_ms == 11
+    assert result.plan.receipts[0].engine_peak_rss_kb == 3072
+    assert result.plan.receipts[0].compute_units == 0.25
+    assert result.plan.receipts[0].observability["compute_ms"] == 11
     assert result.execution_mode.value == "live"
 
 

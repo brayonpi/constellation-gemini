@@ -26,5 +26,5 @@
   <g transform="translate(320 475)"><rect class="box" width="200" height="120"/><text x="22" y="31" class="tag">ACT</text><text x="22" y="66" class="label">Sandbox patch</text><text x="22" y="91" class="small">Verified plans only</text></g>
   <g transform="translate(75 475)"><rect class="box" width="170" height="120"/><text x="22" y="31" class="tag">EVIDENCE</text><text x="22" y="66" class="label">Replay bundle</text><text x="22" y="91" class="small">Receipt + witnesses</text></g>
   <rect x="585" y="444" width="560" height="180" rx="23" fill="none" stroke="#32a67f" stroke-width="2" stroke-dasharray="7 7"/>
-  <text x="603" y="649" class="tag" style="fill:#278267">TRUST BOUNDARY — NO VERIFIED REPLAY, NO ACTION</text>
+  <text x="603" y="649" class="tag" style="fill:#278267">TRUST BOUNDARY. NO VERIFIED REPLAY, NO ACTION</text>
 </svg>

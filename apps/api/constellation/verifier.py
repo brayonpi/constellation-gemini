@@ -244,7 +244,9 @@ def verify_mission(
         "qap": not any(issue.code.startswith("QAP_") or issue.code == "INVALID_QAP_PERMUTATION" for issue in issues),
         "provenance": receipt_valid,
     }
-    plan_payload = plan.model_dump(mode="json", exclude={"verification_report"})
+    # Application state is not part of the proposed schedule. Excluding apply_status keeps
+    # the plan fingerprint stable when the already verified sandbox mutation is recorded.
+    plan_payload = plan.model_dump(mode="json", exclude={"verification_report", "apply_status"})
     return VerificationReport(
         verified=not issues,
         assurance="verified" if not issues else "abstained",

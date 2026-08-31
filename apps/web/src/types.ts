@@ -60,6 +60,19 @@ export type Mission = {
   run_id: string
   correlation_id: string
   execution_mode: 'live' | 'local_deterministic' | 'offline_precomputed' | 'degraded_fixture'
+  runtime_telemetry?: {
+    planning_wall_time_ms: number
+    verifier_wall_time_ms?: number | null
+    cover_round_trip_ms?: number | null
+    qap_round_trip_ms?: number | null
+    process_peak_rss_mb: number
+    process_peak_rss_scope: 'worker_process_peak_since_start'
+    candidate_bundle_count: number
+    execution_mode: 'live' | 'local_deterministic' | 'offline_precomputed' | 'degraded_fixture'
+    runtime_platform: string
+    measured_at: string
+    measurement_note: string
+  } | null
   applied_plan_digest?: string
   snapshot: {
     sha256: string
@@ -118,6 +131,10 @@ export type Mission = {
       response_digest?: string
       latency_ms?: number
       retry_count: number
+      engine_elapsed_ms?: number | null
+      engine_peak_rss_kb?: number | null
+      compute_units?: number | null
+      observability: Record<string, unknown>
       receipt: Record<string, unknown>
     }>
     verification_report?: {

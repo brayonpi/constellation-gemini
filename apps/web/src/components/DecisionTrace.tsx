@@ -19,6 +19,8 @@ const componentLabels: Record<string, string> = {
   'independent-verifier': 'Separate checker',
   'artifact-store': 'Evidence builder',
   'cloud-tasks': 'Durable worker',
+  'local-simulator': 'Transparent simulator',
+  'runtime-telemetry': 'Run measurement',
   'sandbox-mutation': 'Sandbox',
 }
 
@@ -38,7 +40,7 @@ export function DecisionTrace({ mission, busy }: { mission?: Mission; busy: bool
           <Download size={14} /> Download log
         </a>}
       </div>
-      <p className="trace-intro">These are observable steps, timings, and receipts—not private model thoughts.</p>
+      <p className="trace-intro">These are observable steps, timings, and receipts. They are not private model thoughts.</p>
       <div className="trace-controls" aria-label="Filter evidence events">
         <Filter size={12} />
         {(['all', 'gemini', 'cortex', 'verifier'] as FilterMode[]).map((item) => (

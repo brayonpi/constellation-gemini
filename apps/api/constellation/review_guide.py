@@ -10,7 +10,9 @@ provided files. Negative findings are welcome when supported by evidence.
 
 1. Validate every entry in `checksums.json` against the corresponding file before trusting it.
 2. Inspect `canonical-model.json`, `fixture.json`, `candidate-bundles.json`,
-   `selected-bundles.json`, `mission-result.json`, and `verification-report.json`.
+   `selected-bundles.json`, `mission-result.json`, `verification-report.json`, and
+   `runtime-telemetry.json`. Read `VERIFIER-SOURCE.py` before accepting the report and compare it
+   with the repository source when the repository is available.
 3. Confirm that each selected bundle exists, required obligations are covered, failed resources
    are absent, action intervals are coherent, and the reported QAP placement/cost can be
    recomputed from the declared matrices.
@@ -28,8 +30,13 @@ Trace this exact boundary through code and tests:
 - Deterministic code canonicalizes the mission and computes its SHA-256 digest.
 - HexStellar Cortex receives only documented public `cover` and optional `qap` contracts.
 - The application must preserve the assurance/certainty returned by Cortex without promotion.
+- Cortex `elapsed_ms` and `peak_rss_kb` describe the engine execution in that response; API round
+  trip, verifier time, and Constellation worker RSS are separate measurements.
 - The independent verifier must not import or call the HexStellar client.
 - Only a currently verified input/plan digest may mutate the sandbox.
+- The verifier can establish that the formalized rules passed. It cannot establish that the
+  language model captured an unstated operator intention; inspect the visible clarification and
+  canonical model boundary separately.
 
 Pay special attention to points a shallow review may miss:
 
@@ -37,6 +44,10 @@ Pay special attention to points a shallow review may miss:
   optimality.
 - `verified_operation`, `heuristic`, `certified`, and `abstained` are different evidence labels.
 - `local_deterministic` and `offline_precomputed` are different execution modes.
+- Local mode must not invent Cortex engine time, engine memory, or compute units.
+- The replay bundle alone does not establish an acceleration factor. Treat accelerated
+  infrastructure as a platform description and require a scoped benchmark before claiming a
+  numerical speedup.
 - Orbital geometry, stations, failures, and mission policies are simulated.
 - Any Borg-derived workload fields must retain provenance and must not be described as a Google
   orbital mission or as reproducing the Borg scheduler.

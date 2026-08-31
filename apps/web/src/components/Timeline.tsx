@@ -61,12 +61,12 @@ export function Timeline({ mission, view }: { mission?: Mission; view: MissionVi
     <section className="panel timeline-panel" aria-labelledby="timeline-title">
       <div className="panel-heading timeline-heading">
         <div>
-          <span className="eyebrow">Minute-by-minute checked schedule · {viewLabels[view]}</span>
+          <span className="eyebrow">Minute by minute checked schedule · {viewLabels[view]}</span>
           <h2 id="timeline-title">{view === 'diff' ? 'Before and after: every changed reservation' : `The ${viewLabels[view]} schedule`}</h2>
         </div>
         <div className="timeline-metrics" aria-label="Selected plan resource summary">
-          <span><BatteryCharging size={13} /> Lowest energy left <strong>{finalEnergy ?? '—'}</strong></span>
-          <span><Database size={13} /> Most storage used <strong>{peakStorage ?? '—'}</strong></span>
+          <span><BatteryCharging size={13} /> Lowest energy left <strong>{finalEnergy ?? 'Not available'}</strong></span>
+          <span><Database size={13} /> Most storage used <strong>{peakStorage ?? 'Not available'}</strong></span>
           <span><RadioTower size={13} /> Stations used <strong>{stationRows.length}</strong></span>
         </div>
       </div>
@@ -107,7 +107,7 @@ export function Timeline({ mission, view }: { mission?: Mission; view: MissionVi
       </div>
       {focused && <div className="timeline-inspector" role="status">
         <div><span>Schedule item</span><strong>{focused.id}</strong></div>
-        <div><span>Reserved minutes</span><strong>{focused.interval.start}–{focused.interval.end} min</strong></div>
+        <div><span>Reserved minutes</span><strong>{focused.interval.start} to {focused.interval.end} min</strong></div>
         <div><span>Resource</span><strong>{focused.station_id ?? focused.satellite_id}</strong></div>
         <div><span>Resource change</span><strong>{focused.energy_delta} energy · {focused.storage_delta} MB storage</strong></div>
         <button onClick={() => setFocused(undefined)}>Close</button>
